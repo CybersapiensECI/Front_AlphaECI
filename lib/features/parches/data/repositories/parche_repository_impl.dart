@@ -53,7 +53,7 @@ class ParcheRepositoryImpl implements ParcheRepository {
           'hour': hour,
           'maximumQuota': maximumQuota,
           'creatorStudentId': creatorStudentId,
-          if (eventId != null) 'eventId': eventId,
+          'eventId': ?eventId,
         }));
   }
 

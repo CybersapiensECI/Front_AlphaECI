@@ -4,6 +4,10 @@
 /// TODO(gateway): cuando se confirme el API Gateway (Kong), colapsar
 /// todo a una sola GATEWAY_URL.
 abstract final class Env {
+  /// Modo demo: sin backends. Repositories mock con datos de muestra.
+  /// Activar: flutter run --dart-define=DEMO=true
+  static const demoMode = bool.fromEnvironment('DEMO');
+
   static const authUrl = String.fromEnvironment(
     'AUTH_URL',
     defaultValue: 'http://localhost:8080',

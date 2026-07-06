@@ -28,12 +28,12 @@ class ProfileRepositoryImpl implements ProfileRepository {
     String? privacyLevel,
   }) {
     final fields = <String, dynamic>{
-      if (name != null) 'name': name,
-      if (gender != null) 'gender': gender,
-      if (career != null) 'career': career,
-      if (semester != null) 'semester': semester,
-      if (biography != null) 'biography': biography,
-      if (privacyLevel != null) 'privacyLevel': privacyLevel,
+      'name': ?name,
+      'gender': ?gender,
+      'career': ?career,
+      'semester': ?semester,
+      'biography': ?biography,
+      'privacyLevel': ?privacyLevel,
     };
     return _guard(() => _api.updateStudent(userId, fields));
   }

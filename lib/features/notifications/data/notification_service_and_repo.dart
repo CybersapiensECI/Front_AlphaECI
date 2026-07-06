@@ -14,7 +14,7 @@ class NotificationApiService {
 
   static const _base = '/api/notifications';
 
-  /// GET / — Page<NotificationResponse>: el contenido viene en `content`.
+  /// GET / — `Page<NotificationResponse>`: el contenido viene en `content`.
   Future<List<AppNotification>> getNotifications({int page = 0}) async {
     final response = await _dio.get<Map<String, dynamic>>(
       _base,
