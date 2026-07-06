@@ -341,7 +341,7 @@ class _MatchOverlay extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      MascotSticker(stickerIndex: AppAssets.stickerLove, size: 84),
+                      const MascotSticker(asset: AppAssets.stickerLove, size: 84),
                       const SizedBox(width: 16),
                       Container(
                         padding: const EdgeInsets.all(4),

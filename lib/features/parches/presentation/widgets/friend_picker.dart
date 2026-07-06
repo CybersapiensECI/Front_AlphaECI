@@ -85,7 +85,7 @@ class _FriendPickerSheetState extends ConsumerState<_FriendPickerSheet> {
                 data: (items) {
                   if (items.isEmpty) {
                     return const MascotEmptyState(
-                      stickerIndex: AppAssets.stickerConfused,
+                      asset: AppAssets.stickerConfused,
                       message: 'Aún no tienes amistades para invitar.\n'
                           'Conecta con gente en Descubrir.',
                     );

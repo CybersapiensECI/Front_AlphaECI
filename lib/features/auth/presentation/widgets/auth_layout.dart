@@ -76,10 +76,10 @@ class AuthLayout extends StatelessWidget {
                       ],
                     ),
                   ),
-                  Positioned(
+                  const Positioned(
                     top: -50,
                     child: MascotSticker(
-                      stickerIndex: AppAssets.stickerWink,
+                      asset: AppAssets.stickerCool,
                       size: 100,
                     ),
                   ),

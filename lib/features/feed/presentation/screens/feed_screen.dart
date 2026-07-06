@@ -137,7 +137,7 @@ class FeedScreen extends ConsumerWidget {
             data: (items) {
               if (items.isEmpty) {
                 return MascotEmptyState(
-                  stickerIndex: AppAssets.stickerConfused,
+                  asset: AppAssets.stickerConfused,
                   message: category == null
                       ? 'Aún no hay publicaciones.\nÚnete a un parche y '
                           'comparte el momento cuando esté ocurriendo.'

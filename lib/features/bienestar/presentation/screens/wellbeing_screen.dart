@@ -44,7 +44,7 @@ class WellbeingScreen extends ConsumerWidget {
                     child: Row(
                       children: [
                         const MascotSticker(
-                            stickerIndex: AppAssets.stickerLove, size: 64),
+                            asset: AppAssets.stickerLove, size: 64),
                         const SizedBox(width: 16),
                         Expanded(
                           child: Text(

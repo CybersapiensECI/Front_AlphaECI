@@ -44,29 +44,18 @@ class BrandLogo extends StatelessWidget {
 class MascotSticker extends StatelessWidget {
   const MascotSticker({
     super.key,
-    required this.stickerIndex,
+    required this.asset,
     this.size = 72,
     this.fallbackIcon = Icons.pets,
   });
 
-  final int stickerIndex;
+  final String asset;
   final double size;
   final IconData fallbackIcon;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    
-    // Calcular fila y columna en la grilla 4x5
-    final row = stickerIndex ~/ 4;
-    final col = stickerIndex % 4;
-
-    // Alignment va de -1.0 a 1.0
-    // Columna 0 -> -1.0, Columna 1 -> -0.333, Columna 2 -> 0.333, Columna 3 -> 1.0
-    // Fila 0 -> -1.0, Fila 1 -> -0.5, Fila 2 -> 0.0, Fila 3 -> 0.5, Fila 4 -> 1.0
-    final x = -1.0 + (col * (2.0 / 3.0));
-    final y = -1.0 + (row * 0.5);
-
     return Container(
       width: size,
       height: size,
@@ -76,23 +65,11 @@ class MascotSticker extends StatelessWidget {
         boxShadow: AppShadows.soft(context),
       ),
       clipBehavior: Clip.antiAlias,
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: FittedBox(
-              fit: BoxFit.none,
-              alignment: Alignment(x, y),
-              child: Image.asset(
-                AppAssets.stickersSheet,
-                width: size * 4,
-                height: size * 5,
-                fit: BoxFit.fill,
-                errorBuilder: (_, _, _) =>
-                    Icon(fallbackIcon, size: size * 0.5, color: scheme.primary),
-              ),
-            ),
-          ),
-        ],
+      child: Image.asset(
+        asset,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) =>
+            Icon(fallbackIcon, size: size * 0.5, color: scheme.primary),
       ),
     );
   }
@@ -103,13 +80,13 @@ class MascotEmptyState extends StatelessWidget {
   const MascotEmptyState({
     super.key,
     required this.message,
-    this.stickerIndex = AppAssets.stickerConfused,
+    this.asset = AppAssets.stickerConfused,
     this.actionLabel,
     this.onAction,
   });
 
   final String message;
-  final int stickerIndex;
+  final String asset;
   final String? actionLabel;
   final VoidCallback? onAction;
 
@@ -122,7 +99,7 @@ class MascotEmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            MascotSticker(stickerIndex: stickerIndex, size: 110),
+            MascotSticker(asset: asset, size: 110),
             const SizedBox(height: AppSpacing.md),
             Text(
               message,
@@ -146,14 +123,14 @@ class MascotEmptyState extends StatelessWidget {
 }
 
 /// Muestra un SnackBar flotante con el sticker de la mascota.
-void showMascotSnackBar(BuildContext context, String message, int stickerIndex) {
+void showMascotSnackBar(BuildContext context, String message, String asset) {
   ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
     ..showSnackBar(
       SnackBar(
         content: Row(
           children: [
-            MascotSticker(stickerIndex: stickerIndex, size: 48),
+            MascotSticker(asset: asset, size: 48),
             const SizedBox(width: 16),
             Expanded(
               child: Text(

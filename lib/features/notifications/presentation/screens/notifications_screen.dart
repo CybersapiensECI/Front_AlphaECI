@@ -37,11 +37,11 @@ _NotificationKind _kindOf(String? type) {
 }
 
 /// Sticker de la mascota según el tipo de notificación.
-int _stickerOf(_NotificationKind kind) => switch (kind) {
+String _stickerOf(_NotificationKind kind) => switch (kind) {
       _NotificationKind.match => AppAssets.stickerLove,
       _NotificationKind.parcheInvitation => AppAssets.stickerHey,
       _NotificationKind.reminder => AppAssets.stickerReminder,
-      _NotificationKind.general => AppAssets.stickerGoodMorning,
+      _NotificationKind.general => AppAssets.stickerHello,
     };
 
 class NotificationsScreen extends ConsumerWidget {
@@ -68,7 +68,7 @@ class NotificationsScreen extends ConsumerWidget {
         data: (items) {
           if (items.isEmpty) {
             return const MascotEmptyState(
-              stickerIndex: AppAssets.stickerGoodnight,
+              asset: AppAssets.stickerGoodnight,
               message:
                   'Todo tranquilo por aquí.\nCuando pase algo, te avisamos 🔔',
             );
@@ -197,7 +197,7 @@ class _NotificationCard extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Expresión de la mascota según el tipo.
-                  MascotSticker(stickerIndex: _stickerOf(kind), size: 56),
+                  MascotSticker(asset: _stickerOf(kind), size: 56),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(

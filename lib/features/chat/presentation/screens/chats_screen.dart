@@ -96,7 +96,7 @@ class ChatsScreen extends ConsumerWidget {
                 ? const SkeletonList(count: 6)
                 : items.isEmpty
                     ? MascotEmptyState(
-                        stickerIndex: filter == ChatFilter.unread
+                        asset: filter == ChatFilter.unread
                             ? AppAssets.stickerSleepy
                             : AppAssets.stickerConfused,
                         message: filter == ChatFilter.unread
