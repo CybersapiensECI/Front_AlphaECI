@@ -66,7 +66,7 @@ class EventsScreen extends ConsumerWidget {
               return RefreshIndicator(
                 onRefresh: () async => ref.invalidate(eventsProvider),
                 child: ListView.builder(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
                   itemCount: items.length,
                   itemBuilder: (context, index) => FadeSlideIn(
                     delay: Duration(milliseconds: 50 * index),

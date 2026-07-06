@@ -8,12 +8,21 @@ import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/otp_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
+import '../../features/bienestar/presentation/screens/wellbeing_screen.dart';
+import '../../features/chat/presentation/providers/chat_provider.dart';
+import '../../features/chat/presentation/screens/chat_room_screen.dart';
+import '../../features/chat/presentation/screens/chats_screen.dart';
+import '../../features/gamification/presentation/screens/monas_screen.dart';
+import '../../features/geo/presentation/screens/zone_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/notifications/presentation/screens/notifications_screen.dart';
 import '../../features/parches/domain/entities/parche.dart';
 import '../../features/parches/presentation/screens/create_parche_screen.dart';
 import '../../features/parches/presentation/screens/parche_detail_screen.dart';
+import '../../features/profile/domain/entities/profile.dart';
 import '../../features/profile/presentation/screens/edit_profile_screen.dart';
+import '../../features/profile/presentation/screens/public_profile_screen.dart';
+import '../../features/stats/presentation/screens/dashboard_screen.dart';
 import '../widgets/error_view.dart';
 import '../widgets/splash_screen.dart';
 import 'routes.dart';
@@ -58,61 +67,101 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(
         path: Routes.splash,
-        builder: (_, _) => const SplashScreen(),
+        pageBuilder: (_, state) => _page(state, const SplashScreen()),
       ),
       GoRoute(
         path: Routes.login,
-        builder: (_, _) => const LoginScreen(),
+        pageBuilder: (_, state) => _page(state, const LoginScreen()),
       ),
       GoRoute(
         path: Routes.register,
-        builder: (_, _) => const RegisterScreen(),
+        pageBuilder: (_, state) => _page(state, const RegisterScreen()),
       ),
       GoRoute(
         path: Routes.otp,
-        builder: (_, state) {
+        pageBuilder: (_, state) {
           final extra = state.extra;
           final map = extra is Map ? extra : const {};
-          return OtpScreen(
+          return _page(state, OtpScreen(
             email: map['email'] as String? ?? '',
             password: map['password'] as String? ?? '',
-          );
+          ));
         },
       ),
       GoRoute(
         path: Routes.forgotPassword,
-        builder: (_, _) => const ForgotPasswordScreen(),
+        pageBuilder: (_, state) => _page(state, const ForgotPasswordScreen()),
       ),
       GoRoute(
         path: Routes.completeProfile,
-        builder: (_, state) =>
-            CompleteProfileScreen(email: state.extra as String? ?? ''),
+        pageBuilder: (_, state) => _page(
+            state, CompleteProfileScreen(email: state.extra as String? ?? '')),
       ),
       GoRoute(
         path: Routes.home,
-        builder: (_, _) => const HomeScreen(),
+        pageBuilder: (_, state) => _page(state, const HomeScreen()),
       ),
       GoRoute(
         path: Routes.editProfile,
-        builder: (_, _) => const EditProfileScreen(),
+        pageBuilder: (_, state) => _page(state, const EditProfileScreen()),
       ),
       GoRoute(
         path: Routes.notifications,
-        builder: (_, _) => const NotificationsScreen(),
+        pageBuilder: (_, state) => _page(state, const NotificationsScreen()),
       ),
       GoRoute(
         path: Routes.createParche,
-        builder: (_, _) => const CreateParcheScreen(),
+        pageBuilder: (_, state) => _page(state, const CreateParcheScreen()),
+      ),
+      GoRoute(
+        path: Routes.chats,
+        pageBuilder: (_, state) => _page(state, const ChatsScreen()),
+      ),
+      GoRoute(
+        path: Routes.chatRoom,
+        pageBuilder: (_, state) {
+          final conversation = state.extra;
+          if (conversation is ChatConversation) {
+            return _page(state, ChatRoomScreen(conversation: conversation));
+          }
+          return _page(state, const ChatsScreen());
+        },
+      ),
+      GoRoute(
+        path: Routes.monas,
+        pageBuilder: (_, state) => _page(state, const MonasScreen()),
+      ),
+      GoRoute(
+        path: Routes.dashboard,
+        pageBuilder: (_, state) => _page(state, const DashboardScreen()),
+      ),
+      GoRoute(
+        path: Routes.bienestar,
+        pageBuilder: (_, state) => _page(state, const WellbeingScreen()),
+      ),
+      GoRoute(
+        path: Routes.zone,
+        pageBuilder: (_, state) => _page(state, const ZoneScreen()),
+      ),
+      GoRoute(
+        path: Routes.publicProfile,
+        pageBuilder: (_, state) {
+          final summary = state.extra;
+          if (summary is ProfileSummary) {
+            return _page(state, PublicProfileScreen(summary: summary));
+          }
+          return _page(state, const HomeScreen());
+        },
       ),
       GoRoute(
         path: Routes.parcheDetail,
-        builder: (_, state) {
+        pageBuilder: (_, state) {
           final parche = state.extra;
           if (parche is Parche) {
-            return ParcheDetailScreen(parche: parche);
+            return _page(state, ParcheDetailScreen(parche: parche));
           }
           // Acceso directo por URL sin objeto: volver al feed.
-          return const _ParcheNotLoaded();
+          return _page(state, const _ParcheNotLoaded());
         },
       ),
     ],
@@ -132,4 +181,27 @@ class _ParcheNotLoaded extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Transición estándar de la app: fade + slide sutil (280ms).
+CustomTransitionPage<void> _page(GoRouterState state, Widget child) {
+  return CustomTransitionPage<void>(
+    key: state.pageKey,
+    child: child,
+    transitionDuration: const Duration(milliseconds: 280),
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      final curved =
+          CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+      return FadeTransition(
+        opacity: curved,
+        child: SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0, 0.03),
+            end: Offset.zero,
+          ).animate(curved),
+          child: child,
+        ),
+      );
+    },
+  );
 }

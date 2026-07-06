@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/routes.dart';
+import '../../../../core/theme/design_tokens.dart';
+import '../../../../core/theme/theme_provider.dart';
 import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/animations.dart';
 import '../../../../core/widgets/async_value_view.dart';
@@ -25,56 +27,74 @@ class ProfileScreen extends ConsumerWidget {
   }
 }
 
-class _ProfileBody extends StatelessWidget {
+class _ProfileBody extends ConsumerWidget {
   const _ProfileBody({required this.profile});
 
   final UserProfile profile;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
       child: Center(
         child: ConstrainedBox(
           constraints:
               const BoxConstraints(maxWidth: Breakpoints.contentMaxWidth),
           child: StaggeredColumn(
             children: [
-              // ── Header ────────────────────────────────────
-              Row(
-                children: [
-                  Hero(
-                    tag: 'my-avatar',
-                    child: ProfileAvatar(
-                      name: profile.name,
-                      photoUrl: profile.photoUrl,
-                      radius: 40,
+              // ── Header con cover de marca ─────────────────
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: AppGradients.of(context),
+                  borderRadius: BorderRadius.circular(AppRadii.lg),
+                  boxShadow: AppShadows.soft(context),
+                ),
+                child: Row(
+                  children: [
+                    Hero(
+                      tag: 'my-avatar',
+                      child: ProfileAvatar(
+                        name: profile.name,
+                        photoUrl: profile.photoUrl,
+                        radius: 40,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(profile.name,
-                            style: theme.textTheme.headlineSmall),
-                        if (profile.career != null)
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                           Text(
-                            '${profile.career}'
-                            '${profile.semester != null ? ' · Semestre ${profile.semester}' : ''}',
-                            style: theme.textTheme.bodySmall,
+                            profile.name,
+                            style: theme.textTheme.headlineSmall
+                                ?.copyWith(color: Colors.white),
                           ),
-                      ],
+                          if (profile.career != null)
+                            Text(
+                              '${profile.career}'
+                              '${profile.semester != null ? ' · Semestre ${profile.semester}' : ''}',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: Colors.white.withValues(alpha: 0.85),
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
-                  ),
-                  IconButton.filledTonal(
-                    tooltip: 'Editar perfil',
-                    icon: const Icon(Icons.edit_outlined),
-                    onPressed: () => context.push(Routes.editProfile),
-                  ),
-                ],
+                    IconButton(
+                      tooltip: 'Editar perfil',
+                      style: IconButton.styleFrom(
+                        backgroundColor:
+                            Colors.white.withValues(alpha: 0.2),
+                        foregroundColor: Colors.white,
+                      ),
+                      icon: const Icon(Icons.edit_outlined),
+                      onPressed: () => context.push(Routes.editProfile),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 20),
               // ── Nivel / XP ────────────────────────────────
@@ -184,6 +204,79 @@ class _ProfileBody extends StatelessWidget {
                   leading: Icon(Icons.people_outline, color: scheme.primary),
                   title: Text('${profile.friendsId.length} conexiones'),
                   subtitle: const Text('Personas con las que has conectado'),
+                ),
+              ),
+              const SizedBox(height: 16),
+              // ── Accesos ───────────────────────────────────
+              Card(
+                child: Column(
+                  children: [
+                    ListTile(
+                      leading:
+                          Icon(Icons.emoji_events_outlined, color: scheme.primary),
+                      title: const Text('Mis Monas'),
+                      subtitle: const Text('Logros y recompensas'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => context.push(Routes.monas),
+                    ),
+                    const Divider(height: 1),
+                    ListTile(
+                      leading: Icon(Icons.insights_outlined,
+                          color: scheme.primary),
+                      title: const Text('Mi Dashboard'),
+                      subtitle: const Text('Tu actividad en números'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => context.push(Routes.dashboard),
+                    ),
+                    const Divider(height: 1),
+                    ListTile(
+                      leading: Icon(Icons.spa_outlined, color: scheme.primary),
+                      title: const Text('Bienestar'),
+                      subtitle: const Text('Recursos y contactos de apoyo'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => context.push(Routes.bienestar),
+                    ),
+                    const Divider(height: 1),
+                    ListTile(
+                      leading:
+                          Icon(Icons.place_outlined, color: scheme.primary),
+                      title: const Text('Mi zona del campus'),
+                      subtitle: const Text('Parches cerca de ti'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => context.push(Routes.zone),
+                    ),
+                    const Divider(height: 1),
+                    // Selector de tema (Sistema/Claro/Oscuro), persistido.
+                    ListTile(
+                      leading: Icon(Icons.dark_mode_outlined,
+                          color: scheme.primary),
+                      title: const Text('Apariencia'),
+                      trailing: SegmentedButton<ThemeMode>(
+                        showSelectedIcon: false,
+                        style: const ButtonStyle(
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        segments: const [
+                          ButtonSegment(
+                            value: ThemeMode.system,
+                            icon: Icon(Icons.brightness_auto, size: 18),
+                          ),
+                          ButtonSegment(
+                            value: ThemeMode.light,
+                            icon: Icon(Icons.light_mode, size: 18),
+                          ),
+                          ButtonSegment(
+                            value: ThemeMode.dark,
+                            icon: Icon(Icons.dark_mode, size: 18),
+                          ),
+                        ],
+                        selected: {ref.watch(themeModeProvider)},
+                        onSelectionChanged: (selection) => ref
+                            .read(themeModeProvider.notifier)
+                            .set(selection.first),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],

@@ -8,6 +8,7 @@ import '../../domain/entities/registration_data.dart';
 import '../../domain/entities/user_session.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../data/repositories/auth_repository_impl.dart';
+import '../../data/repositories/mock_auth_repository.dart';
 import '../../data/services/auth_api_service.dart';
 
 // ── Wiring de capas ───────────────────────────────────────────
@@ -17,6 +18,7 @@ final authApiServiceProvider = Provider<AuthApiService>((ref) {
 });
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
+  if (Env.demoMode) return const MockAuthRepository();
   return AuthRepositoryImpl(
     api: ref.watch(authApiServiceProvider),
     tokens: ref.watch(tokenStorageProvider),

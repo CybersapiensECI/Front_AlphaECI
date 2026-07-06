@@ -42,4 +42,25 @@ abstract interface class ParcheRepository {
     String? text,
     String? photoUrl,
   });
+
+  /// POST /api/invitations — SendInvitationCommand {parcheId, senderId,
+  /// invitedId}.
+  Future<Result<String>> sendInvitation({
+    required String parcheId,
+    required String senderId,
+    required String invitedId,
+  });
+
+  /// POST /api/posts/{postId}/comments — {authorId, text}.
+  Future<Result<String>> createComment({
+    required String postId,
+    required String authorId,
+    required String text,
+  });
+
+  /// POST /api/posts/{postId}/reactions — {studentId} (toggle).
+  Future<Result<String>> reactToPost({
+    required String postId,
+    required String studentId,
+  });
 }

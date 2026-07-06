@@ -8,8 +8,26 @@ import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/animations.dart';
 import '../../../../core/widgets/async_value_view.dart';
 import '../../../../core/widgets/empty_state.dart';
+import '../../../../core/widgets/interest_chip.dart';
+import '../../../../core/widgets/loading_skeleton.dart';
 import '../../domain/entities/parche.dart';
 import '../providers/parche_provider.dart';
+
+/// Categorías del feed. TODO(backend): confirmar valores del enum
+/// ParcheCategory sembrados en Parches-Service.
+const _feedCategories = ['DEPORTE', 'ESTUDIO', 'JUEGOS', 'CULTURA', 'COMIDA'];
+
+/// Ícono y color por categoría (identidad visual del feed).
+(IconData, Color) categoryStyle(String? category, ColorScheme scheme) {
+  return switch (category?.toUpperCase()) {
+    'DEPORTE' => (Icons.sports_soccer, scheme.tertiary),
+    'ESTUDIO' => (Icons.menu_book_outlined, scheme.primary),
+    'JUEGOS' => (Icons.sports_esports_outlined, scheme.secondary),
+    'CULTURA' => (Icons.theater_comedy_outlined, scheme.tertiary),
+    'COMIDA' => (Icons.restaurant_outlined, scheme.secondary),
+    _ => (Icons.celebration_outlined, scheme.primary),
+  };
+}
 
 /// Feed de parches con búsqueda y FAB para crear.
 class ParchesScreen extends ConsumerStatefulWidget {
@@ -31,14 +49,19 @@ class _ParchesScreenState extends ConsumerState<ParchesScreen> {
   @override
   Widget build(BuildContext context) {
     final feed = ref.watch(parcheFeedProvider);
+    final filter = ref.watch(parcheFilterProvider);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      floatingActionButton: FloatingActionButton.extended(
-        heroTag: 'create-parche',
-        onPressed: () => context.push(Routes.createParche),
-        icon: const Icon(Icons.add),
-        label: const Text('Crear parche'),
+      // Padding inferior: no chocar con la barra de navegación flotante.
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 72),
+        child: FloatingActionButton.extended(
+          heroTag: 'create-parche',
+          onPressed: () => context.push(Routes.createParche),
+          icon: const Icon(Icons.add),
+          label: const Text('Crear parche'),
+        ),
       ),
       body: Column(
         children: [
@@ -70,10 +93,42 @@ class _ParchesScreenState extends ConsumerState<ParchesScreen> {
               ),
             ),
           ),
+          // Filtro por categoría (feed estilo red social).
+          SizedBox(
+            height: 44,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              children: [
+                InterestChip(
+                  label: 'Todos',
+                  selected: filter.category == null,
+                  onTap: () => ref.read(parcheFilterProvider.notifier).state =
+                      ParcheFilter(query: filter.query),
+                ),
+                const SizedBox(width: 8),
+                for (final category in _feedCategories) ...[
+                  InterestChip(
+                    label: category,
+                    selected: filter.category == category,
+                    onTap: () =>
+                        ref.read(parcheFilterProvider.notifier).state =
+                            ParcheFilter(
+                      query: filter.query,
+                      category: category,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 4),
           Expanded(
             child: AsyncValueView<List<Parche>>(
               value: feed,
               onRetry: () => ref.invalidate(parcheFeedProvider),
+              loading: const SkeletonList(),
               data: (parches) {
                 if (parches.isEmpty) {
                   return const EmptyState(
@@ -122,42 +177,70 @@ class ParcheCard extends StatelessWidget {
         ? 0.0
         : parche.memberCount / parche.maximumQuota;
 
+    final (categoryIcon, categoryColor) =
+        categoryStyle(parche.category, scheme);
+
     return BouncyTap(
       onTap: () => context.push(
         Routes.parcheDetailPath(parche.id),
         extra: parche,
       ),
       child: Card(
-        margin: const EdgeInsets.only(bottom: 12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+        margin: const EdgeInsets.only(bottom: 14),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Banner de categoría con gradiente (feed visual).
+            Container(
+              height: 64,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: [
+                    categoryColor.withValues(alpha: 0.85),
+                    scheme.primary.withValues(alpha: 0.75),
+                  ],
+                ),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
                 children: [
-                  CircleAvatar(
-                    backgroundColor: scheme.tertiary.withValues(alpha: 0.2),
-                    child: Icon(Icons.celebration_outlined,
-                        color: scheme.primary),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(parche.name, style: theme.textTheme.titleMedium),
-                        if (parche.category != null)
-                          Text(parche.category!,
-                              style: theme.textTheme.bodySmall),
-                      ],
+                  Icon(categoryIcon, color: Colors.white, size: 28),
+                  const SizedBox(width: 10),
+                  if (parche.category != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.22),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        parche.category!,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
                     ),
-                  ),
+                  const Spacer(),
                   if (parche.type == 'PRIVATE')
-                    Icon(Icons.lock_outline,
-                        size: 18, color: scheme.onSurfaceVariant),
+                    const Icon(Icons.lock_outline,
+                        size: 18, color: Colors.white),
                 ],
               ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(parche.name, style: theme.textTheme.titleMedium),
               if (parche.description?.isNotEmpty == true) ...[
                 const SizedBox(height: 8),
                 Text(
@@ -210,8 +293,10 @@ class ParcheCard extends StatelessWidget {
                   ),
                 ],
               ),
-            ],
-          ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -84,6 +84,42 @@ class ParcheApiService {
     return response.data?['message'] as String? ?? 'Publicación creada.';
   }
 
+  Future<String> sendInvitation(
+    String parcheId,
+    String senderId,
+    String invitedId,
+  ) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/api/invitations',
+      data: {
+        'parcheId': parcheId,
+        'senderId': senderId,
+        'invitedId': invitedId,
+      },
+    );
+    return response.data?['message'] as String? ?? 'Invitación enviada.';
+  }
+
+  Future<String> createComment(
+    String postId,
+    String authorId,
+    String text,
+  ) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/api/posts/$postId/comments',
+      data: {'authorId': authorId, 'text': text},
+    );
+    return response.data?['message'] as String? ?? 'Comentario creado.';
+  }
+
+  Future<String> reactToPost(String postId, String studentId) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/api/posts/$postId/reactions',
+      data: {'studentId': studentId},
+    );
+    return response.data?['message'] as String? ?? 'Reacción procesada.';
+  }
+
   static String formatDate(DateTime date) =>
       DateFormat('yyyy-MM-dd').format(date);
 }

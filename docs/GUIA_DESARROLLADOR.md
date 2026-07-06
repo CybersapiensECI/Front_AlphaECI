@@ -75,6 +75,16 @@ En VS Code, con F5 (debug) el hot reload es automático al guardar.
 
 ---
 
+## 3.5 Modo demo (sin backends)
+
+Para ver TODA la app sin levantar ningún servicio:
+
+```bash
+flutter run -d windows --dart-define=DEMO=true
+```
+
+Cualquier correo/contraseña sirve en el login. Los datos (personas, parches, eventos, notificaciones) son de muestra — repositorios mock marcados `TODO(demo)` en `data/repositories/mock_*.dart`. La cinta "DEMO" en la esquina indica que está activo. Sin el flag, la app usa los backends reales.
+
 ## 4. Conectar con los backends
 
 Los servicios corren localmente (cada repo tiene `Dockerfile`; identity tiene `docker-compose.yml`). Las URLs se pasan al front con `--dart-define`:

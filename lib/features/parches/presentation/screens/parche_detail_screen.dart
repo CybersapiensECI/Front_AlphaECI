@@ -8,6 +8,8 @@ import '../../../../core/widgets/app_button.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/presentation/widgets/auth_layout.dart'
     show showAppSnackBar;
+import '../../../profile/domain/entities/profile.dart';
+import '../../../profile/presentation/providers/profile_provider.dart';
 import '../../domain/entities/parche.dart';
 import '../providers/parche_provider.dart';
 
@@ -40,6 +42,50 @@ class _ParcheDetailScreenState extends ConsumerState<ParcheDetailScreen> {
     setState(() => _joining = false);
     result.when(
       success: (message) => showAppSnackBar(context, '$message 🎉'),
+      error: (failure) => showAppSnackBar(context, failure.message),
+    );
+  }
+
+  Future<void> _react(String postId) async {
+    final result =
+        await ref.read(parcheActionsProvider).react(widget.parche.id, postId);
+    if (!mounted) return;
+    final failure = result.failureOrNull;
+    if (failure != null) showAppSnackBar(context, failure.message);
+  }
+
+  Future<void> _comment(String postId) async {
+    final controller = TextEditingController();
+    final text = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Comentar'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(hintText: 'Tu comentario…'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () =>
+                Navigator.of(dialogContext).pop(controller.text.trim()),
+            child: const Text('Publicar'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (text == null || text.isEmpty || !mounted) return;
+    final result = await ref
+        .read(parcheActionsProvider)
+        .comment(widget.parche.id, postId, text);
+    if (!mounted) return;
+    result.when(
+      success: (message) => showAppSnackBar(context, message),
       error: (failure) => showAppSnackBar(context, failure.message),
     );
   }
@@ -146,9 +192,26 @@ class _ParcheDetailScreenState extends ConsumerState<ParcheDetailScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Miembros (${memberList.length}/${parche.maximumQuota})',
-                          style: theme.textTheme.titleMedium,
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'Miembros (${memberList.length}/${parche.maximumQuota})',
+                                style: theme.textTheme.titleMedium,
+                              ),
+                            ),
+                            if (isMember)
+                              TextButton.icon(
+                                icon: const Icon(Icons.person_add_outlined,
+                                    size: 18),
+                                label: const Text('Invitar'),
+                                onPressed: () => showDialog<void>(
+                                  context: context,
+                                  builder: (_) => _InviteDialog(
+                                      parcheId: widget.parche.id),
+                                ),
+                              ),
+                          ],
                         ),
                         const SizedBox(height: 12),
                         Wrap(
@@ -244,6 +307,30 @@ class _ParcheDetailScreenState extends ConsumerState<ParcheDetailScreen> {
                                         ? Text(DateFormat('d MMM · HH:mm')
                                             .format(post.createdAt!))
                                         : null,
+                                    trailing: isMember
+                                        ? Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              IconButton(
+                                                tooltip: 'Me gusta',
+                                                icon: const Icon(
+                                                    Icons.favorite_border,
+                                                    size: 20),
+                                                onPressed: () =>
+                                                    _react(post.id),
+                                              ),
+                                              IconButton(
+                                                tooltip: 'Comentar',
+                                                icon: const Icon(
+                                                    Icons
+                                                        .mode_comment_outlined,
+                                                    size: 20),
+                                                onPressed: () =>
+                                                    _comment(post.id),
+                                              ),
+                                            ],
+                                          )
+                                        : null,
                                   ),
                               ],
                             );
@@ -258,6 +345,99 @@ class _ParcheDetailScreenState extends ConsumerState<ParcheDetailScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Dialog para invitar amigos al parche (RFB12).
+/// Lista los friendsId del perfil propio resueltos vía batch.
+class _InviteDialog extends ConsumerWidget {
+  const _InviteDialog({required this.parcheId});
+
+  final String parcheId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final profile = ref.watch(myProfileProvider);
+
+    return AlertDialog(
+      title: const Text('Invitar a un amigo'),
+      content: SizedBox(
+        width: 360,
+        child: profile.when(
+          loading: () => const SizedBox(
+            height: 80,
+            child: Center(child: CircularProgressIndicator()),
+          ),
+          error: (e, _) => const Text('No se pudo cargar tu perfil.'),
+          data: (me) {
+            if (me.friendsId.isEmpty) {
+              return const Text(
+                  'Aún no tienes conexiones para invitar. '
+                  '¡Conecta con gente en Descubrir!');
+            }
+            return _FriendList(parcheId: parcheId, friendIds: me.friendsId);
+          },
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cerrar'),
+        ),
+      ],
+    );
+  }
+}
+
+class _FriendList extends ConsumerWidget {
+  const _FriendList({required this.parcheId, required this.friendIds});
+
+  final String parcheId;
+  final List<String> friendIds;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return FutureBuilder(
+      future: ref.read(profileRepositoryProvider).getProfilesByIds(friendIds),
+      builder: (context, snapshot) {
+        final profiles =
+            snapshot.data?.dataOrNull ?? const <ProfileSummary>[];
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const SizedBox(
+            height: 80,
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (profiles.isEmpty) {
+          return const Text('No se pudieron cargar tus conexiones.');
+        }
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final friend in profiles)
+              ListTile(
+                dense: true,
+                title: Text(friend.name),
+                trailing: IconButton(
+                  tooltip: 'Enviar invitación',
+                  icon: const Icon(Icons.send_outlined, size: 20),
+                  onPressed: () async {
+                    final result = await ref
+                        .read(parcheActionsProvider)
+                        .invite(parcheId, friend.id);
+                    if (!context.mounted) return;
+                    showAppSnackBar(
+                      context,
+                      result.when(
+                          success: (m) => m, error: (f) => f.message),
+                    );
+                  },
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }

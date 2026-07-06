@@ -11,6 +11,15 @@ abstract final class Routes {
   static const notifications = '/notifications';
   static const createParche = '/parches/create';
   static const parcheDetail = '/parches/:id';
+  static const chats = '/chats';
+  static const chatRoom = '/chats/:roomId';
+  static const monas = '/monas';
+  static const dashboard = '/dashboard';
+  static const bienestar = '/bienestar';
+  static const zone = '/zona';
+  static const publicProfile = '/users/:id';
 
   static String parcheDetailPath(String id) => '/parches/$id';
+  static String chatRoomPath(String roomId) => '/chats/$roomId';
+  static String publicProfilePath(String id) => '/users/$id';
 }

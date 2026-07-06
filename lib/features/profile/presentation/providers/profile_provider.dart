@@ -5,6 +5,7 @@ import '../../../../core/errors/failures.dart';
 import '../../../../core/errors/result.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../data/repositories/mock_profile_repository.dart';
 import '../../data/repositories/profile_repository_impl.dart';
 import '../../data/services/profile_api_service.dart';
 import '../../domain/entities/profile.dart';
@@ -15,6 +16,7 @@ final profileApiServiceProvider = Provider<ProfileApiService>((ref) {
 });
 
 final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
+  if (Env.demoMode) return MockProfileRepository();
   return ProfileRepositoryImpl(api: ref.watch(profileApiServiceProvider));
 });
 

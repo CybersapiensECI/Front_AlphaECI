@@ -12,16 +12,21 @@ class AsyncValueView<T> extends StatelessWidget {
     required this.value,
     required this.data,
     this.onRetry,
+    this.loading,
   });
 
   final AsyncValue<T> value;
   final Widget Function(T data) data;
   final VoidCallback? onRetry;
 
+  /// Widget de carga custom (ej. SkeletonList). Default: spinner.
+  final Widget? loading;
+
   @override
   Widget build(BuildContext context) {
     return value.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () =>
+          loading ?? const Center(child: CircularProgressIndicator()),
       error: (error, _) => ErrorView(
         message: error is Failure ? error.message : 'Error inesperado.',
         onRetry: onRetry,

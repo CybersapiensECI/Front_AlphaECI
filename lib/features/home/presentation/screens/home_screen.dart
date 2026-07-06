@@ -24,7 +24,13 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _index = 0;
 
+  // Inicio = feed de parches (estilo red social, filtrable por categoría).
   static const _destinations = [
+    AdaptiveDestination(
+      icon: Icons.home_outlined,
+      selectedIcon: Icons.home,
+      label: 'Inicio',
+    ),
     AdaptiveDestination(
       icon: Icons.explore_outlined,
       selectedIcon: Icons.explore,
@@ -34,11 +40,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       icon: Icons.favorite_outline,
       selectedIcon: Icons.favorite,
       label: 'Matches',
-    ),
-    AdaptiveDestination(
-      icon: Icons.groups_outlined,
-      selectedIcon: Icons.groups,
-      label: 'Parches',
     ),
     AdaptiveDestination(
       icon: Icons.event_outlined,
@@ -61,8 +62,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       selectedIndex: _index,
       onDestinationSelected: (i) => setState(() => _index = i),
       appBar: AppBar(
-        title: Text(_destinations[_index].label),
+        title: Text(_index == 0 ? 'AlphaECI' : _destinations[_index].label),
         actions: [
+          IconButton(
+            tooltip: 'Chats',
+            onPressed: () => context.push(Routes.chats),
+            icon: const Icon(Icons.chat_bubble_outline),
+          ),
           // Campana con badge animado.
           IconButton(
             tooltip: 'Notificaciones',
@@ -108,9 +114,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ),
         child: switch (_index) {
-          0 => const DiscoveryScreen(key: ValueKey('discovery')),
-          1 => const MatchesScreen(key: ValueKey('matches')),
-          2 => const ParchesScreen(key: ValueKey('parches')),
+          0 => const ParchesScreen(key: ValueKey('feed')),
+          1 => const DiscoveryScreen(key: ValueKey('discovery')),
+          2 => const MatchesScreen(key: ValueKey('matches')),
           3 => const EventsScreen(key: ValueKey('events')),
           _ => const ProfileScreen(key: ValueKey('profile')),
         },

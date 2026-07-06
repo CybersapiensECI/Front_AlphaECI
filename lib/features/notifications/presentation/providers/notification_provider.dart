@@ -2,12 +2,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/config/env.dart';
 import '../../../../core/network/api_client.dart';
+import '../../data/mock_notification_repository.dart';
 import '../../data/notification_service_and_repo.dart';
 import '../../domain/entities/app_notification.dart';
 
 final notificationRepositoryProvider =
     Provider<NotificationRepository>((ref) {
-  return NotificationRepository(
+  if (Env.demoMode) return MockNotificationRepository();
+  return NotificationRepositoryImpl(
     NotificationApiService(
         ref.watch(apiClientProvider(Env.notificationUrl))),
   );

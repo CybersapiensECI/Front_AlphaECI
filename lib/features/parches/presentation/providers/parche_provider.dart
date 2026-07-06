@@ -5,6 +5,7 @@ import '../../../../core/errors/failures.dart';
 import '../../../../core/errors/result.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../data/repositories/mock_parche_repository.dart';
 import '../../data/repositories/parche_repository_impl.dart';
 import '../../data/services/parche_api_service.dart';
 import '../../domain/entities/parche.dart';
@@ -15,6 +16,7 @@ final parcheApiServiceProvider = Provider<ParcheApiService>((ref) {
 });
 
 final parcheRepositoryProvider = Provider<ParcheRepository>((ref) {
+  if (Env.demoMode) return MockParcheRepository();
   return ParcheRepositoryImpl(api: ref.watch(parcheApiServiceProvider));
 });
 
@@ -124,6 +126,43 @@ class ParcheActions {
           parcheId: parcheId,
           authorId: userId,
           text: text,
+        );
+    if (result.isSuccess) _ref.invalidate(parchePostsProvider(parcheId));
+    return result;
+  }
+
+  Future<Result<String>> invite(String parcheId, String invitedId) async {
+    final userId = _userId;
+    if (userId == null) return const Error(AuthFailure());
+    return _ref.read(parcheRepositoryProvider).sendInvitation(
+          parcheId: parcheId,
+          senderId: userId,
+          invitedId: invitedId,
+        );
+  }
+
+  Future<Result<String>> comment(
+    String parcheId,
+    String postId,
+    String text,
+  ) async {
+    final userId = _userId;
+    if (userId == null) return const Error(AuthFailure());
+    final result = await _ref.read(parcheRepositoryProvider).createComment(
+          postId: postId,
+          authorId: userId,
+          text: text,
+        );
+    if (result.isSuccess) _ref.invalidate(parchePostsProvider(parcheId));
+    return result;
+  }
+
+  Future<Result<String>> react(String parcheId, String postId) async {
+    final userId = _userId;
+    if (userId == null) return const Error(AuthFailure());
+    final result = await _ref.read(parcheRepositoryProvider).reactToPost(
+          postId: postId,
+          studentId: userId,
         );
     if (result.isSuccess) _ref.invalidate(parchePostsProvider(parcheId));
     return result;

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../utils/breakpoints.dart';
+import 'animated_bottom_nav.dart';
+import 'gradient_scaffold.dart';
 
 class AdaptiveDestination {
   const AdaptiveDestination({
@@ -14,11 +16,10 @@ class AdaptiveDestination {
   final String label;
 }
 
-/// Shell de navegación adaptativo:
-/// - ancho <  600: NavigationBar inferior (móvil)
-/// - ancho >= 600: NavigationRail lateral (compacto en tablet,
-///   extendido en desktop >= 1024)
-///
+/// Shell de navegación adaptativo premium:
+/// - ancho <  600: barra flotante glass (AnimatedBottomNav)
+/// - ancho >= 600: NavigationRail (extendido en desktop >= 1024)
+/// Fondo con blobs de marca en ambos casos.
 /// Decisión por LayoutBuilder (ancho disponible), no por dispositivo.
 class AdaptiveScaffold extends StatelessWidget {
   const AdaptiveScaffold({
@@ -45,25 +46,19 @@ class AdaptiveScaffold extends StatelessWidget {
         final isDesktop = width >= Breakpoints.desktop;
 
         if (isMobile) {
-          return Scaffold(
+          return GradientScaffold(
             appBar: appBar,
             body: body,
-            bottomNavigationBar: NavigationBar(
+            extendBody: true,
+            bottomNavigationBar: AnimatedBottomNav(
+              destinations: destinations,
               selectedIndex: selectedIndex,
               onDestinationSelected: onDestinationSelected,
-              destinations: [
-                for (final d in destinations)
-                  NavigationDestination(
-                    icon: Icon(d.icon),
-                    selectedIcon: Icon(d.selectedIcon),
-                    label: d.label,
-                  ),
-              ],
             ),
           );
         }
 
-        return Scaffold(
+        return GradientScaffold(
           appBar: appBar,
           body: Row(
             children: [
@@ -71,6 +66,7 @@ class AdaptiveScaffold extends StatelessWidget {
                 selectedIndex: selectedIndex,
                 onDestinationSelected: onDestinationSelected,
                 extended: isDesktop,
+                backgroundColor: Colors.transparent,
                 labelType: isDesktop
                     ? NavigationRailLabelType.none
                     : NavigationRailLabelType.all,

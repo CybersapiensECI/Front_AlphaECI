@@ -6,6 +6,7 @@ import '../../../../core/errors/result.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../data/repositories/event_repository_impl.dart';
+import '../../data/repositories/mock_event_repository.dart';
 import '../../data/services/event_api_service.dart';
 import '../../domain/entities/event.dart';
 import '../../domain/repositories/event_repository.dart';
@@ -15,6 +16,7 @@ final eventApiServiceProvider = Provider<EventApiService>((ref) {
 });
 
 final eventRepositoryProvider = Provider<EventRepository>((ref) {
+  if (Env.demoMode) return MockEventRepository();
   return EventRepositoryImpl(api: ref.watch(eventApiServiceProvider));
 });
 

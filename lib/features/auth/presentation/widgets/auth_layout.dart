@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 
-/// Layout responsive para pantallas de autenticación:
-/// tarjeta centrada con ancho máximo — se ve bien en móvil y desktop.
+import '../../../../core/theme/design_tokens.dart';
+import '../../../../core/widgets/glass_card.dart';
+import '../../../../core/widgets/gradient_scaffold.dart';
+
+/// Layout premium para pantallas de autenticación:
+/// fondo con blobs de marca + tarjeta glass centrada + logo con gradiente.
 class AuthLayout extends StatelessWidget {
   const AuthLayout({
     super.key,
@@ -17,41 +21,60 @@ class AuthLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Scaffold(
+    return GradientScaffold(
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 420),
-              child: Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(28),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.hub_outlined,
-                        size: 48,
-                        color: theme.colorScheme.primary,
+              child: GlassCard(
+                padding: const EdgeInsets.all(AppSpacing.xl),
+                radius: AppRadii.xl,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Logo con gradiente de marca.
+                    Hero(
+                      tag: 'app-logo',
+                      child: Container(
+                        width: 72,
+                        height: 72,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: AppGradients.of(context),
+                          boxShadow: AppShadows.glow(
+                              theme.colorScheme.primary),
+                        ),
+                        child: const Icon(Icons.hub_outlined,
+                            size: 36, color: Colors.white),
                       ),
-                      const SizedBox(height: 16),
-                      Text(
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    // Título con gradiente.
+                    ShaderMask(
+                      shaderCallback: (bounds) =>
+                          AppGradients.of(context).createShader(bounds),
+                      child: Text(
                         title,
                         textAlign: TextAlign.center,
-                        style: theme.textTheme.headlineSmall,
+                        style: theme.textTheme.headlineMedium?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        subtitle,
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.bodySmall,
-                      ),
-                      const SizedBox(height: 24),
-                      child,
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      subtitle,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodySmall,
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    child,
+                  ],
                 ),
               ),
             ),

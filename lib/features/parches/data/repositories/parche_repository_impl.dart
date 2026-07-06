@@ -87,6 +87,32 @@ class ParcheRepositoryImpl implements ParcheRepository {
         ));
   }
 
+  @override
+  Future<Result<String>> sendInvitation({
+    required String parcheId,
+    required String senderId,
+    required String invitedId,
+  }) {
+    return _guard(() => _api.sendInvitation(parcheId, senderId, invitedId));
+  }
+
+  @override
+  Future<Result<String>> createComment({
+    required String postId,
+    required String authorId,
+    required String text,
+  }) {
+    return _guard(() => _api.createComment(postId, authorId, text));
+  }
+
+  @override
+  Future<Result<String>> reactToPost({
+    required String postId,
+    required String studentId,
+  }) {
+    return _guard(() => _api.reactToPost(postId, studentId));
+  }
+
   Future<Result<T>> _guard<T>(Future<T> Function() call) async {
     try {
       return Success(await call());

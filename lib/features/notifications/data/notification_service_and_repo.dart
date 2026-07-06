@@ -53,20 +53,32 @@ class NotificationApiService {
   }
 }
 
+/// Contrato del repositorio (permite mock en modo demo).
+abstract interface class NotificationRepository {
+  Future<Result<List<AppNotification>>> getNotifications();
+  Future<Result<int>> getUnreadCount();
+  Future<Result<void>> markAsRead(String id);
+  Future<Result<void>> markAllAsRead();
+}
+
 /// Repository delgado (el servicio ya devuelve entidades).
-class NotificationRepository {
-  const NotificationRepository(this._api);
+class NotificationRepositoryImpl implements NotificationRepository {
+  const NotificationRepositoryImpl(this._api);
 
   final NotificationApiService _api;
 
+  @override
   Future<Result<List<AppNotification>>> getNotifications() =>
       _guard(_api.getNotifications);
 
+  @override
   Future<Result<int>> getUnreadCount() => _guard(_api.getUnreadCount);
 
+  @override
   Future<Result<void>> markAsRead(String id) =>
       _guard(() => _api.markAsRead(id));
 
+  @override
   Future<Result<void>> markAllAsRead() => _guard(_api.markAllAsRead);
 
   Future<Result<T>> _guard<T>(Future<T> Function() call) async {

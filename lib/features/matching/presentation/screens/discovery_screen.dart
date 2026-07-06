@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/widgets/animations.dart';
 import '../../../../core/widgets/async_value_view.dart';
 import '../../../../core/widgets/empty_state.dart';
@@ -87,7 +88,7 @@ class _DiscoveryScreenState extends ConsumerState<DiscoveryScreen> {
         }
 
         return Padding(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 96),
           child: Column(
             children: [
               Expanded(
@@ -151,19 +152,39 @@ class _CandidateCard extends StatelessWidget {
     final percent = (scored.totalScore * 100).clamp(0, 100).round();
 
     return Card(
-      elevation: 6,
-      child: Container(
+      clipBehavior: Clip.antiAlias,
+      child: SizedBox(
         width: 400,
-        padding: const EdgeInsets.all(24),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            ProfileAvatar(
-              name: candidate.profile.name,
-              photoUrl: candidate.profile.photoUrl,
-              radius: 56,
+            // Header con gradiente de marca y avatar superpuesto.
+            Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.bottomCenter,
+              children: [
+                Container(
+                  height: 88,
+                  width: double.infinity,
+                  decoration:
+                      BoxDecoration(gradient: AppGradients.of(context)),
+                ),
+                Positioned(
+                  bottom: -44,
+                  child: ProfileAvatar(
+                    name: candidate.profile.name,
+                    photoUrl: candidate.profile.photoUrl,
+                    radius: 44,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 56),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
             Text(
               candidate.profile.name,
               style: theme.textTheme.headlineSmall,
@@ -212,6 +233,9 @@ class _CandidateCard extends StatelessWidget {
             _ScoreRow(label: 'Intereses', value: scored.interestScore),
             _ScoreRow(label: 'Académico', value: scored.academicScore),
             _ScoreRow(label: 'Horario', value: scored.scheduleScore),
+                ],
+              ),
+            ),
           ],
         ),
       ),

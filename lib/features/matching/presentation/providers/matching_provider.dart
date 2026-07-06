@@ -8,6 +8,7 @@ import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../profile/domain/entities/profile.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 import '../../data/repositories/matching_repository_impl.dart';
+import '../../data/repositories/mock_matching_repository.dart';
 import '../../data/services/matching_api_service.dart';
 import '../../domain/entities/match.dart';
 import '../../domain/repositories/matching_repository.dart';
@@ -17,6 +18,7 @@ final matchingApiServiceProvider = Provider<MatchingApiService>((ref) {
 });
 
 final matchingRepositoryProvider = Provider<MatchingRepository>((ref) {
+  if (Env.demoMode) return MockMatchingRepository();
   return MatchingRepositoryImpl(api: ref.watch(matchingApiServiceProvider));
 });
 

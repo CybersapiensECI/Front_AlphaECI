@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../core/router/routes.dart';
 import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/animations.dart';
 import '../../../../core/widgets/async_value_view.dart';
@@ -139,7 +141,7 @@ class _MatchList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
       itemCount: items.length,
       itemBuilder: (context, index) {
         final item = items[index];
@@ -165,6 +167,10 @@ class _MatchList extends StatelessWidget {
                           'Afinidad ${(item.match.score! * 100).round()}%')
                       : null,
                   trailing: trailingBuilder(context, item),
+                  onTap: () => context.push(
+                    Routes.publicProfilePath(item.profile.id),
+                    extra: item.profile,
+                  ),
                 ),
               ),
             ),
