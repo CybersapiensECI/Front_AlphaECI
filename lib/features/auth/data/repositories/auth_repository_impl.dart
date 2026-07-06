@@ -13,10 +13,9 @@ import '../services/auth_api_service.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   const AuthRepositoryImpl({
-    required AuthApiService api,
-    required TokenStorage tokens,
-  })  : _api = api,
-        _tokens = tokens;
+    required this._api,
+    required this._tokens,
+  });
 
   final AuthApiService _api;
   final TokenStorage _tokens;

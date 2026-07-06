@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../errors/failures.dart';
 import 'error_view.dart';
 
-/// Renderiza un AsyncValue<T> de Riverpod con loading/error/data uniforme.
+/// Renderiza un `AsyncValue<T>` de Riverpod con loading/error/data uniforme.
 /// Evita repetir el mismo switch en cada pantalla.
 class AsyncValueView<T> extends StatelessWidget {
   const AsyncValueView({

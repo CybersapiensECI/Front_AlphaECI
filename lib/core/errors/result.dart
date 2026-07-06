@@ -1,7 +1,7 @@
 import 'failures.dart';
 
 /// Resultado de una operación: éxito con dato o fallo tipado.
-/// Los repositories devuelven siempre Result<T> — nunca lanzan excepciones
+/// Los repositories devuelven siempre `Result<T>` — nunca lanzan excepciones
 /// hacia la capa de presentación.
 sealed class Result<T> {
   const Result();

@@ -18,9 +18,8 @@ import 'session_expiry_bus.dart';
 class AuthInterceptor extends QueuedInterceptor {
   AuthInterceptor({
     required TokenStorage tokenStorage,
-    required SessionExpiryBus expiryBus,
-  })  : _tokens = tokenStorage,
-        _expiryBus = expiryBus;
+    required this._expiryBus,
+  }) : _tokens = tokenStorage;
 
   final TokenStorage _tokens;
   final SessionExpiryBus _expiryBus;
