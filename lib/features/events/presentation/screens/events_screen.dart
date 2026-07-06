@@ -63,7 +63,7 @@ class EventsScreen extends ConsumerWidget {
             data: (items) {
               if (items.isEmpty) {
                 return MascotEmptyState(
-                  asset: AppAssets.stickerSleepy,
+                  stickerIndex: AppAssets.stickerSleepy,
                   message: selectedCategory == null
                       ? 'Nada por aquí todavía.\nLos eventos del campus '
                           'aparecerán en este espacio.'

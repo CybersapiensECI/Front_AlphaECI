@@ -148,7 +148,7 @@ class _FriendsTab extends ConsumerWidget {
       data: (items) {
         if (items.isEmpty) {
           return const MascotEmptyState(
-            asset: AppAssets.stickerHello,
+            stickerIndex: AppAssets.stickerGoodMorning,
             message: 'Aún no tienes amistades.\nAcepta solicitudes o '
                 'conecta en Descubrir.',
           );

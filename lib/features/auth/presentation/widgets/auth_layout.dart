@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/app_assets.dart';
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/widgets/glass_card.dart';
 import '../../../../core/widgets/gradient_scaffold.dart';
@@ -75,7 +76,7 @@ class AuthLayout extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const Positioned(
+                  Positioned(
                     top: -50,
                     child: MascotSticker(
                       stickerIndex: AppAssets.stickerWink,

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/theme/app_assets.dart';
 import '../../../../core/theme/design_tokens.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/animations.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/async_value_view.dart';
@@ -340,7 +342,7 @@ class _MatchOverlay extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const MascotSticker(stickerIndex: AppAssets.stickerLove, size: 84),
+                      MascotSticker(stickerIndex: AppAssets.stickerLove, size: 84),
                       const SizedBox(width: 16),
                       Container(
                         padding: const EdgeInsets.all(4),

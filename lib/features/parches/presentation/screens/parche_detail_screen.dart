@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/animations.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/theme/app_assets.dart';
 import '../../../../core/widgets/gradient_scaffold.dart';
 import '../../../../core/widgets/mascot.dart';
 import '../../../../core/widgets/text_input_sheet.dart';

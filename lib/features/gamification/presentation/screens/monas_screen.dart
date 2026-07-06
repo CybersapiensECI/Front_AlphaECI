@@ -48,7 +48,7 @@ class MonasScreen extends ConsumerWidget {
                         child: Row(
                           children: [
                             const MascotSticker(
-                                asset: AppAssets.stickerApproved, size: 72),
+                                stickerIndex: AppAssets.stickerApproved, size: 72),
                             const SizedBox(width: 16),
                             Expanded(
                               child: Column(

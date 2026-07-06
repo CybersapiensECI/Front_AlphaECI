@@ -57,7 +57,7 @@ class DashboardScreen extends ConsumerWidget {
                     child: Row(
                       children: [
                         const MascotSticker(
-                            asset: AppAssets.stickerCool, size: 64),
+                            stickerIndex: AppAssets.stickerCool, size: 64),
                         const SizedBox(width: 16),
                         if (data.profile != null) ...[
                           Expanded(
