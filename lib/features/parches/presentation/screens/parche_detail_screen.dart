@@ -6,6 +6,7 @@ import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/animations.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/gradient_scaffold.dart';
+import '../../../../core/widgets/mascot.dart';
 import '../../../../core/widgets/text_input_sheet.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/presentation/widgets/auth_layout.dart'
@@ -43,7 +44,7 @@ class _ParcheDetailScreenState extends ConsumerState<ParcheDetailScreen> {
     if (!mounted) return;
     setState(() => _joining = false);
     result.when(
-      success: (message) => showAppSnackBar(context, '$message 🎉'),
+      success: (message) => showMascotSnackBar(context, '$message 🎉', AppAssets.stickerApproved),
       error: (failure) => showAppSnackBar(context, failure.message),
     );
   }
@@ -69,7 +70,7 @@ class _ParcheDetailScreenState extends ConsumerState<ParcheDetailScreen> {
         .comment(widget.parche.id, postId, text);
     if (!mounted) return;
     result.when(
-      success: (message) => showAppSnackBar(context, message),
+      success: (message) => showMascotSnackBar(context, message, AppAssets.stickerOk),
       error: (failure) => showAppSnackBar(context, failure.message),
     );
   }
@@ -411,10 +412,9 @@ class _FriendList extends ConsumerWidget {
                         .read(parcheActionsProvider)
                         .invite(parcheId, friend.id);
                     if (!context.mounted) return;
-                    showAppSnackBar(
-                      context,
-                      result.when(
-                          success: (m) => m, error: (f) => f.message),
+                    result.when(
+                      success: (m) => showMascotSnackBar(context, m, AppAssets.stickerHey),
+                      error: (f) => showAppSnackBar(context, f.message),
                     );
                   },
                 ),

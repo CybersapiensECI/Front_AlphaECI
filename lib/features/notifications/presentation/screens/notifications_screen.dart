@@ -37,11 +37,11 @@ _NotificationKind _kindOf(String? type) {
 }
 
 /// Sticker de la mascota según el tipo de notificación.
-String _stickerOf(_NotificationKind kind) => switch (kind) {
+int _stickerOf(_NotificationKind kind) => switch (kind) {
       _NotificationKind.match => AppAssets.stickerLove,
       _NotificationKind.parcheInvitation => AppAssets.stickerHey,
       _NotificationKind.reminder => AppAssets.stickerReminder,
-      _NotificationKind.general => AppAssets.stickerHello,
+      _NotificationKind.general => AppAssets.stickerGoodMorning,
     };
 
 class NotificationsScreen extends ConsumerWidget {
@@ -68,22 +68,23 @@ class NotificationsScreen extends ConsumerWidget {
         data: (items) {
           if (items.isEmpty) {
             return const MascotEmptyState(
-              asset: AppAssets.stickerGoodnight,
+              stickerIndex: AppAssets.stickerGoodnight,
               message:
                   'Todo tranquilo por aquí.\nCuando pase algo, te avisamos 🔔',
             );
           }
           return RefreshIndicator(
             onRefresh: () async => ref.invalidate(notificationsProvider),
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: items.length,
-              itemBuilder: (context, index) => FadeSlideIn(
-                delay: Duration(milliseconds: 40 * index),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(
-                        maxWidth: Breakpoints.contentMaxWidth),
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                    maxWidth: Breakpoints.contentMaxWidth),
+                child: ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: items.length,
+                  itemBuilder: (context, index) => FadeSlideIn(
+                    delay: Duration(milliseconds: 40 * index),
                     child: _NotificationCard(notification: items[index]),
                   ),
                 ),
@@ -196,7 +197,7 @@ class _NotificationCard extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Expresión de la mascota según el tipo.
-                  MascotSticker(asset: _stickerOf(kind), size: 56),
+                  MascotSticker(stickerIndex: _stickerOf(kind), size: 56),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(

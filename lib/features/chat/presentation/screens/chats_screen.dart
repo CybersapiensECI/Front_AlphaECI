@@ -7,7 +7,6 @@ import '../../../../core/theme/app_assets.dart';
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/animations.dart';
-import '../../../../core/widgets/async_value_view.dart';
 import '../../../../core/widgets/gradient_scaffold.dart';
 import '../../../../core/widgets/loading_skeleton.dart';
 import '../../../../core/widgets/mascot.dart';
@@ -17,162 +16,217 @@ import '../../../parches/presentation/providers/parche_provider.dart';
 import '../../../profile/presentation/widgets/profile_avatar.dart';
 import '../providers/chat_provider.dart';
 
+enum ChatFilter { todos, unread, directos, grupos }
+
+final chatFilterProvider = StateProvider<ChatFilter>((ref) => ChatFilter.todos);
+
 /// Chats: directos (matches) y grupales (un chat por parche al que
-/// perteneces), como cualquier app de mensajería.
+/// perteneces), como una app de mensajería moderna.
 class ChatsScreen extends ConsumerWidget {
   const ChatsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final filter = ref.watch(chatFilterProvider);
+    final conversationsAsync = ref.watch(conversationsProvider);
+    final parchesAsync = ref.watch(parcheFeedProvider);
+    final userId = ref.watch(authControllerProvider).session?.userId ?? '';
+
+    final isLoading = conversationsAsync.isLoading || parchesAsync.isLoading;
+    
+    final myParches = parchesAsync.valueOrNull
+            ?.where((p) => p.isMember(userId))
+            .toList() ??
+        [];
+    final myDirects = conversationsAsync.valueOrNull ?? [];
+
+    List<dynamic> items = [];
+    if (filter == ChatFilter.todos) {
+      items = [...myDirects, ...myParches];
+    } else if (filter == ChatFilter.directos) {
+      items = [...myDirects];
+    } else if (filter == ChatFilter.grupos) {
+      items = [...myParches];
+    } else if (filter == ChatFilter.unread) {
+      // Mock: como no hay unread count real en el backend aún, simulamos que algunos
+      // o ninguno tiene no leídos, por ahora mostramos una lista vacía o todos.
+      items = [];
+    }
+
     return GradientScaffold(
       appBar: AppBar(title: const Text('Chats')),
-      body: DefaultTabController(
-        length: 2,
-        child: Column(
-          children: [
-            const TabBar(
-              tabs: [
-                Tab(text: 'Directos'),
-                Tab(text: 'Parches'),
+      body: Column(
+        children: [
+          // Filtros rápidos
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                _FilterChip(
+                  label: 'Todos',
+                  selected: filter == ChatFilter.todos,
+                  onSelected: () => ref.read(chatFilterProvider.notifier).state = ChatFilter.todos,
+                ),
+                const SizedBox(width: 8),
+                _FilterChip(
+                  label: 'No leídos',
+                  selected: filter == ChatFilter.unread,
+                  onSelected: () => ref.read(chatFilterProvider.notifier).state = ChatFilter.unread,
+                ),
+                const SizedBox(width: 8),
+                _FilterChip(
+                  label: 'Directos',
+                  selected: filter == ChatFilter.directos,
+                  onSelected: () => ref.read(chatFilterProvider.notifier).state = ChatFilter.directos,
+                ),
+                const SizedBox(width: 8),
+                _FilterChip(
+                  label: 'Grupos',
+                  selected: filter == ChatFilter.grupos,
+                  onSelected: () => ref.read(chatFilterProvider.notifier).state = ChatFilter.grupos,
+                ),
               ],
             ),
-            Expanded(
-              child: TabBarView(
-                children: [
-                  _DirectsTab(),
-                  _ParcheChatsTab(),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+          const Divider(height: 1),
+          // Lista unificada
+          Expanded(
+            child: isLoading
+                ? const SkeletonList(count: 6)
+                : items.isEmpty
+                    ? MascotEmptyState(
+                        stickerIndex: filter == ChatFilter.unread
+                            ? AppAssets.stickerSleepy
+                            : AppAssets.stickerConfused,
+                        message: filter == ChatFilter.unread
+                            ? 'No tienes mensajes nuevos.'
+                            : 'No hay chats para mostrar aquí.',
+                      )
+                    : RefreshIndicator(
+                        onRefresh: () async {
+                          ref.invalidate(conversationsProvider);
+                          ref.invalidate(parcheFeedProvider);
+                        },
+                        child: ListView.builder(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          itemCount: items.length,
+                          itemBuilder: (context, index) {
+                            final item = items[index];
+                            return FadeSlideIn(
+                              delay: Duration(milliseconds: 30 * index),
+                              child: Center(
+                                child: ConstrainedBox(
+                                  constraints: const BoxConstraints(
+                                      maxWidth: Breakpoints.contentMaxWidth),
+                                  child: item is ChatConversation
+                                      ? _DirectChatTile(conversation: item)
+                                      : _GroupChatTile(parche: item as Parche),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _DirectsTab extends ConsumerWidget {
+class _FilterChip extends StatelessWidget {
+  const _FilterChip({required this.label, required this.selected, required this.onSelected});
+
+  final String label;
+  final bool selected;
+  final VoidCallback onSelected;
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final conversations = ref.watch(conversationsProvider);
-    return AsyncValueView<List<ChatConversation>>(
-      value: conversations,
-      onRetry: () => ref.invalidate(conversationsProvider),
-      loading: const SkeletonList(count: 5),
-      data: (items) {
-        if (items.isEmpty) {
-          return const MascotEmptyState(
-            asset: AppAssets.stickerConfused,
-            message: 'Nada por aquí todavía.\nConecta con alguien en '
-                'Descubrir para empezar a chatear.',
-          );
-        }
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: items.length,
-          itemBuilder: (context, index) {
-            final conversation = items[index];
-            return FadeSlideIn(
-              delay: Duration(milliseconds: 50 * index),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(
-                      maxWidth: Breakpoints.contentMaxWidth),
-                  child: Card(
-                    margin: const EdgeInsets.only(bottom: 10),
-                    child: ListTile(
-                      leading: ProfileAvatar(
-                        name: conversation.profile.name,
-                        photoUrl: conversation.profile.photoUrl,
-                        radius: 24,
-                      ),
-                      title: Text(conversation.profile.name),
-                      subtitle: Text(
-                        conversation.profile.biography ?? '',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () => context.push(
-                        Routes.chatRoomPath(
-                            conversation.connection.chatRoomId),
-                        extra: conversation,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      },
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return ChoiceChip(
+      label: Text(label),
+      selected: selected,
+      onSelected: (_) => onSelected(),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      selectedColor: theme.colorScheme.primaryContainer,
+      labelStyle: TextStyle(
+        fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+        color: selected ? theme.colorScheme.onPrimaryContainer : null,
+      ),
     );
   }
 }
 
-/// Chats grupales: parches donde soy miembro.
-class _ParcheChatsTab extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final feed = ref.watch(parcheFeedProvider);
-    final userId = ref.watch(authControllerProvider).session?.userId ?? '';
+class _DirectChatTile extends StatelessWidget {
+  const _DirectChatTile({required this.conversation});
 
-    return AsyncValueView<List<Parche>>(
-      value: feed,
-      onRetry: () => ref.invalidate(parcheFeedProvider),
-      loading: const SkeletonList(count: 4),
-      data: (parches) {
-        final mine = [
-          for (final p in parches)
-            if (p.isMember(userId)) p,
-        ];
-        if (mine.isEmpty) {
-          return const MascotEmptyState(
-            asset: AppAssets.stickerSleepy,
-            message: 'Sin chats grupales.\nÚnete a un parche y su chat '
-                'aparecerá aquí.',
-          );
-        }
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: mine.length,
-          itemBuilder: (context, index) {
-            final parche = mine[index];
-            final (icon, color) = AppCategoryStyles.of(parche.category);
-            return FadeSlideIn(
-              delay: Duration(milliseconds: 50 * index),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(
-                      maxWidth: Breakpoints.contentMaxWidth),
-                  child: Card(
-                    margin: const EdgeInsets.only(bottom: 10),
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        radius: 24,
-                        backgroundColor: color,
-                        child:
-                            Icon(icon, color: Colors.white, size: 24),
-                      ),
-                      title: Text(parche.name),
-                      subtitle: Text(
-                        '${parche.memberCount} integrantes',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () => context.push(
-                        Routes.chatRoomPath(parche.id),
-                        extra: parche,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      },
+  final ChatConversation conversation;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+      leading: ProfileAvatar(
+        name: conversation.profile.name,
+        photoUrl: conversation.profile.photoUrl,
+        radius: 26,
+      ),
+      title: Text(
+        conversation.profile.name,
+        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+      ),
+      subtitle: Text(
+        conversation.profile.biography ?? 'Toca para chatear',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      ),
+      onTap: () => context.push(
+        Routes.chatRoomPath(conversation.connection.chatRoomId),
+        extra: conversation,
+      ),
+    );
+  }
+}
+
+class _GroupChatTile extends StatelessWidget {
+  const _GroupChatTile({required this.parche});
+
+  final Parche parche;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final (icon, color) = AppCategoryStyles.of(parche.category);
+    
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+      leading: CircleAvatar(
+        radius: 26,
+        backgroundColor: color,
+        child: Icon(icon, color: Colors.white, size: 24),
+      ),
+      title: Text(
+        parche.name,
+        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+      ),
+      subtitle: Text(
+        '${parche.memberCount} integrantes',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      ),
+      onTap: () => context.push(
+        Routes.chatRoomPath(parche.id),
+        extra: parche,
+      ),
     );
   }
 }

@@ -46,8 +46,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return AuthLayout(
-      title: 'AlphaECI',
-      subtitle: 'Conexiones auténticas. Diseño que conecta.',
+      title: '¡Descubre tu parche!',
+      subtitle: 'Haz swipe, conecta con otros estudiantes y encuentra tu parche ideal en la ECI.',
       child: Form(
         key: _formKey,
         child: AutofillGroup(
@@ -82,6 +82,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               const SizedBox(height: 8),
               AppButton(
                 label: 'Iniciar sesión',
+                icon: Icons.auto_awesome_outlined,
                 loading: _loading,
                 onPressed: _submit,
               ),

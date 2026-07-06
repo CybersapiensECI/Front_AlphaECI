@@ -7,6 +7,7 @@ import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/async_value_view.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/glass_card.dart';
+import '../../../../core/widgets/mascot.dart';
 import '../../../auth/presentation/widgets/auth_layout.dart'
     show showAppSnackBar;
 import '../../../profile/presentation/widgets/profile_avatar.dart';
@@ -34,8 +35,8 @@ class _DiscoveryScreenState extends ConsumerState<DiscoveryScreen> {
         if (match.status == MatchStatus.accepted) {
           _showMatchOverlay(candidate);
         } else {
-          showAppSnackBar(
-              context, 'Solicitud enviada a ${candidate.profile.name} 🚀');
+          showMascotSnackBar(
+              context, 'Solicitud enviada a ${candidate.profile.name} 🚀', AppAssets.stickerCool);
         }
       },
       error: (failure) => showAppSnackBar(context, failure.message),
@@ -336,21 +337,26 @@ class _MatchOverlay extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Center(
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: AppGradients.of(context),
-                        boxShadow:
-                            AppShadows.glow(theme.colorScheme.tertiary),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const MascotSticker(stickerIndex: AppAssets.stickerLove, size: 84),
+                      const SizedBox(width: 16),
+                      Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: AppGradients.of(context),
+                          boxShadow:
+                              AppShadows.glow(theme.colorScheme.tertiary),
+                        ),
+                        child: ProfileAvatar(
+                          name: candidate.profile.name,
+                          photoUrl: candidate.profile.photoUrl,
+                          radius: 44,
+                        ),
                       ),
-                      child: ProfileAvatar(
-                        name: candidate.profile.name,
-                        photoUrl: candidate.profile.photoUrl,
-                        radius: 44,
-                      ),
-                    ),
+                    ],
                   ),
                   const SizedBox(height: 16),
                   ShaderMask(
