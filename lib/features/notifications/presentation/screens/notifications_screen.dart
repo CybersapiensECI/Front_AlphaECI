@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/router/routes.dart';
 import '../../../../core/theme/app_assets.dart';
-import '../../../../core/utils/breakpoints.dart';
+
 import '../../../../core/widgets/animations.dart';
 import '../../../../core/widgets/async_value_view.dart';
 import '../../../../core/widgets/gradient_scaffold.dart';
@@ -75,18 +75,14 @@ class NotificationsScreen extends ConsumerWidget {
           }
           return RefreshIndicator(
             onRefresh: () async => ref.invalidate(notificationsProvider),
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(
-                    maxWidth: Breakpoints.contentMaxWidth),
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: items.length,
-                  itemBuilder: (context, index) => FadeSlideIn(
-                    delay: Duration(milliseconds: 40 * index),
-                    child: _NotificationCard(notification: items[index]),
-                  ),
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: items.length,
+              itemBuilder: (context, index) => FadeSlideIn(
+                delay: Duration(milliseconds: 40 * index),
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _NotificationCard(notification: items[index]),
                 ),
               ),
             ),
@@ -184,7 +180,6 @@ class _NotificationCard extends ConsumerWidget {
     final pending = !notification.read;
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 10),
       color: pending ? scheme.tertiary.withValues(alpha: 0.08) : null,
       child: InkWell(
         borderRadius: BorderRadius.circular(20),

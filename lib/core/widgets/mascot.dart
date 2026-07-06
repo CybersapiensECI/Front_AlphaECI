@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import '../theme/app_assets.dart';
 import '../theme/design_tokens.dart';
 
-/// Logo oficial (lobo + escudo) en círculo con glow de marca.
-/// Fallback al ícono anterior si el asset no está disponible.
+/// Logo oficial (lobo + escudo). No recorta en círculo porque el logo
+/// tiene forma de escudo con coronita — se muestra completo.
 class BrandLogo extends StatelessWidget {
   const BrandLogo({super.key, this.size = 72});
 
@@ -13,34 +13,29 @@ class BrandLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Container(
+    return SizedBox(
       width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        boxShadow: AppShadows.glow(scheme.primary),
-      ),
-      child: ClipOval(
-        child: Image.asset(
-          AppAssets.logo,
-          fit: BoxFit.cover,
-          errorBuilder: (_, _, _) => Container(
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: AppGradients.of(context),
-            ),
-            child: Icon(Icons.hub_outlined,
-                size: size * 0.5, color: Colors.white),
+      height: size * 1.15, // el escudo es ligeramente más alto que ancho
+      child: Image.asset(
+        AppAssets.logo,
+        fit: BoxFit.contain,
+        errorBuilder: (_, _, _) => Container(
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: AppGradients.of(context),
+            boxShadow: AppShadows.glow(scheme.primary),
           ),
+          child:
+              Icon(Icons.hub_outlined, size: size * 0.5, color: Colors.white),
         ),
       ),
     );
   }
 }
 
-/// Sticker de la mascota en contenedor estilo pegatina (fondo blanco,
-/// borde redondeado, sombra suave). Fallback a ícono si falta el asset.
+/// Sticker de la mascota. Muestra la imagen sin fondo adicional.
+/// Fallback a ícono si falta el asset.
 class MascotSticker extends StatelessWidget {
   const MascotSticker({
     super.key,
@@ -56,20 +51,15 @@ class MascotSticker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Container(
+    return SizedBox(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(size * 0.28),
-        boxShadow: AppShadows.soft(context),
-      ),
-      clipBehavior: Clip.antiAlias,
       child: Image.asset(
         asset,
-        fit: BoxFit.cover,
-        errorBuilder: (_, _, _) =>
-            Icon(fallbackIcon, size: size * 0.5, color: scheme.primary),
+        fit: BoxFit.contain,
+        errorBuilder: (_, _, _) => Center(
+          child: Icon(fallbackIcon, size: size * 0.5, color: scheme.primary),
+        ),
       ),
     );
   }
@@ -130,9 +120,9 @@ void showMascotSnackBar(BuildContext context, String message, String asset) {
       SnackBar(
         content: Row(
           children: [
-            MascotSticker(asset: asset, size: 48),
-            const SizedBox(width: 16),
-            Expanded(
+            MascotSticker(asset: asset, size: 40),
+            const SizedBox(width: 12),
+            Flexible(
               child: Text(
                 message,
                 style: const TextStyle(fontWeight: FontWeight.w600),
