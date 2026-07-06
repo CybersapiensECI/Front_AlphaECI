@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_assets.dart';
 import '../../../../core/theme/design_tokens.dart';
-import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/animations.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/async_value_view.dart';
