@@ -7,4 +7,10 @@ abstract final class Routes {
   static const forgotPassword = '/forgot-password';
   static const completeProfile = '/complete-profile';
   static const home = '/home';
+  static const editProfile = '/profile/edit';
+  static const notifications = '/notifications';
+  static const createParche = '/parches/create';
+  static const parcheDetail = '/parches/:id';
+
+  static String parcheDetailPath(String id) => '/parches/$id';
 }

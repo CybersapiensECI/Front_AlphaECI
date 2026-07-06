@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
-import '../../../../core/utils/breakpoints.dart';
+import '../../../../core/router/routes.dart';
 import '../../../../core/widgets/adaptive_scaffold.dart';
-import '../../../../core/widgets/empty_state.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../events/presentation/screens/events_screen.dart';
+import '../../../matching/presentation/screens/discovery_screen.dart';
+import '../../../matching/presentation/screens/matches_screen.dart';
+import '../../../notifications/presentation/providers/notification_provider.dart';
+import '../../../parches/presentation/screens/parches_screen.dart';
+import '../../../profile/presentation/screens/profile_screen.dart';
 
-/// Shell principal post-login. Las pestañas Matches/Chat/Parches son
-/// placeholders: cada una se reemplaza al implementar su feature
-/// (matching-service, chat-service, Parches-Service).
+/// Shell principal: Descubrir · Matches · Parches · Eventos · Perfil.
+/// Campana de notificaciones con badge en el AppBar.
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
@@ -21,9 +26,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   static const _destinations = [
     AdaptiveDestination(
-      icon: Icons.home_outlined,
-      selectedIcon: Icons.home,
-      label: 'Inicio',
+      icon: Icons.explore_outlined,
+      selectedIcon: Icons.explore,
+      label: 'Descubrir',
     ),
     AdaptiveDestination(
       icon: Icons.favorite_outline,
@@ -31,20 +36,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       label: 'Matches',
     ),
     AdaptiveDestination(
-      icon: Icons.chat_bubble_outline,
-      selectedIcon: Icons.chat_bubble,
-      label: 'Chat',
-    ),
-    AdaptiveDestination(
       icon: Icons.groups_outlined,
       selectedIcon: Icons.groups,
       label: 'Parches',
+    ),
+    AdaptiveDestination(
+      icon: Icons.event_outlined,
+      selectedIcon: Icons.event,
+      label: 'Eventos',
+    ),
+    AdaptiveDestination(
+      icon: Icons.person_outline,
+      selectedIcon: Icons.person,
+      label: 'Perfil',
     ),
   ];
 
   @override
   Widget build(BuildContext context) {
-    final session = ref.watch(authControllerProvider).session;
+    final unread = ref.watch(unreadCountProvider).valueOrNull ?? 0;
 
     return AdaptiveScaffold(
       destinations: _destinations,
@@ -53,77 +63,57 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       appBar: AppBar(
         title: Text(_destinations[_index].label),
         actions: [
+          // Campana con badge animado.
           IconButton(
-            tooltip: 'Cerrar sesión',
-            icon: const Icon(Icons.logout),
-            onPressed: () =>
-                ref.read(authControllerProvider.notifier).logout(),
+            tooltip: 'Notificaciones',
+            onPressed: () => context.push(Routes.notifications),
+            icon: Badge(
+              isLabelVisible: unread > 0,
+              label: Text('$unread'),
+              child: const Icon(Icons.notifications_outlined),
+            ),
           ),
-        ],
-      ),
-      body: switch (_index) {
-        0 => _WelcomeTab(email: session?.email ?? ''),
-        1 => const EmptyState(
-            icon: Icons.favorite_outline,
-            message:
-                'Matches — pendiente de implementar (matching-service).',
-          ),
-        2 => const EmptyState(
-            icon: Icons.chat_bubble_outline,
-            message: 'Chat — pendiente de implementar (chat-service).',
-          ),
-        _ => const EmptyState(
-            icon: Icons.groups_outlined,
-            message: 'Parches — pendiente de implementar (Parches-Service).',
-          ),
-      },
-    );
-  }
-}
-
-class _WelcomeTab extends StatelessWidget {
-  const _WelcomeTab({required this.email});
-
-  final String email;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Center(
-        child: ConstrainedBox(
-          constraints:
-              const BoxConstraints(maxWidth: Breakpoints.contentMaxWidth),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text('¡Bienvenido!', style: theme.textTheme.headlineMedium),
-              const SizedBox(height: 4),
-              Text(email, style: theme.textTheme.bodySmall),
-              const SizedBox(height: 24),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Sesión activa',
-                          style: theme.textTheme.titleMedium),
-                      const SizedBox(height: 8),
-                      Text(
-                        'La autenticación contra identity-service funciona. '
-                        'Las demás features (perfil, matching, chat, eventos, '
-                        'parches…) se conectan sobre esta misma base.',
-                        style: theme.textTheme.bodyMedium,
-                      ),
-                    ],
-                  ),
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'logout') {
+                ref.read(authControllerProvider.notifier).logout();
+              }
+            },
+            itemBuilder: (_) => const [
+              PopupMenuItem(
+                value: 'logout',
+                child: Row(
+                  children: [
+                    Icon(Icons.logout, size: 20),
+                    SizedBox(width: 8),
+                    Text('Cerrar sesión'),
+                  ],
                 ),
               ),
             ],
           ),
+        ],
+      ),
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        switchInCurve: Curves.easeOutCubic,
+        transitionBuilder: (child, animation) => FadeTransition(
+          opacity: animation,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0, 0.02),
+              end: Offset.zero,
+            ).animate(animation),
+            child: child,
+          ),
         ),
+        child: switch (_index) {
+          0 => const DiscoveryScreen(key: ValueKey('discovery')),
+          1 => const MatchesScreen(key: ValueKey('matches')),
+          2 => const ParchesScreen(key: ValueKey('parches')),
+          3 => const EventsScreen(key: ValueKey('events')),
+          _ => const ProfileScreen(key: ValueKey('profile')),
+        },
       ),
     );
   }
