@@ -46,6 +46,23 @@ class MockChatRepository implements ChatRepository {
         sentAt: DateTime.now().subtract(const Duration(hours: 5)),
       ),
     ],
+    // Chat grupal del parche "Cine al parque ECI" (p4).
+    'p4': [
+      ChatMessage(
+        id: 'c5',
+        chatRoomId: 'p4',
+        senderId: 'u2',
+        content: '¿Alguien lleva palomitas? 🍿',
+        sentAt: DateTime.now().subtract(const Duration(hours: 1)),
+      ),
+      ChatMessage(
+        id: 'c6',
+        chatRoomId: 'p4',
+        senderId: 'u5',
+        content: 'Yo llevo gaseosas. Nos vemos a las 6 🎬',
+        sentAt: DateTime.now().subtract(const Duration(minutes: 50)),
+      ),
+    ],
   };
 
   Future<Result<T>> _ok<T>(T value) =>

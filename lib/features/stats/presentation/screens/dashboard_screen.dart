@@ -4,10 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/config/env.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../../core/theme/app_assets.dart';
 import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/animations.dart';
 import '../../../../core/widgets/async_value_view.dart';
+import '../../../../core/widgets/charts.dart';
+import '../../../../core/widgets/glass_card.dart';
 import '../../../../core/widgets/gradient_scaffold.dart';
+import '../../../../core/widgets/mascot.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../data/stats_repository.dart';
 import '../../domain/entities/personal_stats.dart';
@@ -48,85 +52,117 @@ class DashboardScreen extends ConsumerWidget {
                   const BoxConstraints(maxWidth: Breakpoints.contentMaxWidth),
               child: StaggeredColumn(
                 children: [
-                  if (data.profile != null)
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          children: [
-                            _AnimatedCounter(
-                                value: data.profile!.level, label: 'Nivel'),
-                            _AnimatedCounter(
-                                value: data.profile!.xp, label: 'XP'),
-                            if (data.profile!.semester != null)
-                              _AnimatedCounter(
-                                  value: data.profile!.semester!,
-                                  label: 'Semestre'),
-                          ],
-                        ),
-                      ),
+                  // ── Héroe: nivel/XP + anillo de colección ────
+                  GlassCard(
+                    child: Row(
+                      children: [
+                        const MascotSticker(
+                            asset: AppAssets.stickerCool, size: 64),
+                        const SizedBox(width: 16),
+                        if (data.profile != null) ...[
+                          Expanded(
+                            child: Row(
+                              mainAxisAlignment:
+                                  MainAxisAlignment.spaceAround,
+                              children: [
+                                _AnimatedCounter(
+                                    value: data.profile!.level,
+                                    label: 'Nivel'),
+                                _AnimatedCounter(
+                                    value: data.profile!.xp, label: 'XP'),
+                                if (data.profile!.semester != null)
+                                  _AnimatedCounter(
+                                      value: data.profile!.semester!,
+                                      label: 'Semestre'),
+                              ],
+                            ),
+                          ),
+                        ] else
+                          const Spacer(),
+                        if (data.gamification != null)
+                          RingStat(
+                            value: data.gamification!
+                                    .completionPercentage /
+                                100,
+                            label: 'Colección',
+                            size: 84,
+                          ),
+                      ],
                     ),
+                  ),
                   const SizedBox(height: 12),
+                  // ── Monas: barras por estado ─────────────────
                   if (data.gamification != null)
                     _SectionCard(
                       icon: Icons.emoji_events_outlined,
                       title: 'Monas',
-                      footer: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          AnimatedProgressBar(
-                              value:
-                                  data.gamification!.completionPercentage /
-                                      100),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${data.gamification!.completionPercentage.toStringAsFixed(0)}% de la colección',
-                            style: theme.textTheme.bodySmall,
+                      child: MiniBarChart(
+                        data: [
+                          BarDatum(
+                            label: 'Desbloq.',
+                            value:
+                                data.gamification!.totalMonasUnlocked,
+                            color: Colors.amber,
+                          ),
+                          BarDatum(
+                            label: 'En progreso',
+                            value: data.gamification!.monasInProgress,
+                            color: theme.colorScheme.tertiary,
+                          ),
+                          BarDatum(
+                            label: 'Bloqueadas',
+                            value: data.gamification!.monasLocked,
+                            color: theme.colorScheme.outline,
                           ),
                         ],
                       ),
-                      children: [
-                        _AnimatedCounter(
-                            value: data.gamification!.totalMonasUnlocked,
-                            label: 'Desbloqueadas'),
-                        _AnimatedCounter(
-                            value: data.gamification!.monasInProgress,
-                            label: 'En progreso'),
-                        _AnimatedCounter(
-                            value: data.gamification!.monasLocked,
-                            label: 'Bloqueadas'),
-                      ],
                     ),
                   const SizedBox(height: 12),
+                  // ── Eventos ──────────────────────────────────
                   if (data.events != null)
                     _SectionCard(
                       icon: Icons.event_outlined,
                       title: 'Eventos',
-                      children: [
-                        _AnimatedCounter(
+                      child: MiniBarChart(
+                        data: [
+                          BarDatum(
+                            label: 'Asistidos',
                             value: data.events!.totalAttended,
-                            label: 'Asistidos'),
-                        _AnimatedCounter(
+                            color: const Color(0xFF2FA36F),
+                          ),
+                          BarDatum(
+                            label: 'Próximos',
                             value: data.events!.upcomingEvents,
-                            label: 'Próximos'),
-                        _AnimatedCounter(
-                            value: data.events!.totalEvents, label: 'Total'),
-                      ],
+                            color: theme.colorScheme.tertiary,
+                          ),
+                          BarDatum(
+                            label: 'Total',
+                            value: data.events!.totalEvents,
+                            color: theme.colorScheme.primary,
+                          ),
+                        ],
+                      ),
                     ),
                   const SizedBox(height: 12),
+                  // ── Parches ──────────────────────────────────
                   if (data.parches != null)
                     _SectionCard(
                       icon: Icons.groups_outlined,
                       title: 'Parches',
-                      children: [
-                        _AnimatedCounter(
+                      child: MiniBarChart(
+                        data: [
+                          BarDatum(
+                            label: 'Unidos',
                             value: data.parches!.totalJoined,
-                            label: 'Unidos'),
-                        _AnimatedCounter(
+                            color: theme.colorScheme.secondary,
+                          ),
+                          BarDatum(
+                            label: 'Activos',
                             value: data.parches!.activeParches,
-                            label: 'Activos'),
-                      ],
+                            color: const Color(0xFFE08A3C),
+                          ),
+                        ],
+                      ),
                     ),
                 ],
               ),
@@ -142,14 +178,12 @@ class _SectionCard extends StatelessWidget {
   const _SectionCard({
     required this.icon,
     required this.title,
-    required this.children,
-    this.footer,
+    required this.child,
   });
 
   final IconData icon;
   final String title;
-  final List<Widget> children;
-  final Widget? footer;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
@@ -168,11 +202,7 @@ class _SectionCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: children,
-            ),
-            if (footer != null) ...[const SizedBox(height: 16), footer!],
+            child,
           ],
         ),
       ),

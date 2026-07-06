@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/theme/app_assets.dart';
+import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/animations.dart';
 import '../../../../core/widgets/async_value_view.dart';
+import '../../../../core/widgets/glass_card.dart';
 import '../../../../core/widgets/gradient_scaffold.dart';
+import '../../../../core/widgets/mascot.dart';
 import '../../domain/entities/mona.dart';
 import '../providers/gamification_provider.dart';
 
-/// Colección de monas: desbloqueadas, en progreso y bloqueadas.
+/// Colección de monas como ÁLBUM de pegatinas: casillas desbloqueadas a
+/// color, en progreso con anillo, y bloqueadas como silueta por descubrir.
 class MonasScreen extends ConsumerWidget {
   const MonasScreen({super.key});
 
@@ -18,62 +23,93 @@ class MonasScreen extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return GradientScaffold(
-      appBar: AppBar(title: const Text('Mis Monas')),
+      appBar: AppBar(title: const Text('Álbum de Monas')),
       body: AsyncValueView<UserMonas>(
         value: monas,
         onRetry: () => ref.invalidate(myMonasProvider),
-        data: (data) => SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Center(
-            child: ConstrainedBox(
-              constraints:
-                  const BoxConstraints(maxWidth: Breakpoints.contentMaxWidth),
-              child: StaggeredColumn(
-                children: [
-                  // Resumen.
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          _Stat(
-                              value: '${data.totalUnlocked}/${data.total}',
-                              label: 'Desbloqueadas'),
-                          _Stat(value: '${data.totalXp}', label: 'XP total'),
-                          _Stat(
-                              value: '${data.inProgress.length}',
-                              label: 'En progreso'),
-                        ],
+        data: (data) {
+          final slots = [
+            for (final m in data.unlocked) (_MonaState.unlocked, m),
+            for (final m in data.inProgress) (_MonaState.inProgress, m),
+            for (final m in data.locked) (_MonaState.locked, m),
+          ];
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                    maxWidth: Breakpoints.contentMaxWidth),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // ── Portada del álbum ─────────────────────
+                    FadeSlideIn(
+                      child: GlassCard(
+                        child: Row(
+                          children: [
+                            const MascotSticker(
+                                asset: AppAssets.stickerApproved, size: 72),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.start,
+                                children: [
+                                  Text('Tu colección',
+                                      style: theme.textTheme.titleLarge),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '${data.totalUnlocked} de ${data.total} '
+                                    'monas · ${data.totalXp} XP',
+                                    style: theme.textTheme.bodySmall,
+                                  ),
+                                  const SizedBox(height: 10),
+                                  AnimatedProgressBar(
+                                    value: data.total == 0
+                                        ? 0
+                                        : data.totalUnlocked / data.total,
+                                    height: 8,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  if (data.inProgress.isNotEmpty) ...[
-                    Text('En progreso', style: theme.textTheme.titleLarge),
-                    const SizedBox(height: 12),
-                    for (final mona in data.inProgress)
-                      _MonaCard(mona: mona, state: _MonaState.inProgress),
                     const SizedBox(height: 20),
+                    // ── Casillas del álbum ────────────────────
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final columns =
+                            constraints.maxWidth > 520 ? 4 : 3;
+                        return GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: columns,
+                            mainAxisSpacing: 12,
+                            crossAxisSpacing: 12,
+                            childAspectRatio: 0.78,
+                          ),
+                          itemCount: slots.length,
+                          itemBuilder: (context, index) {
+                            final (state, mona) = slots[index];
+                            return FadeSlideIn(
+                              delay: Duration(milliseconds: 40 * index),
+                              child: _AlbumSlot(mona: mona, state: state),
+                            );
+                          },
+                        );
+                      },
+                    ),
                   ],
-                  if (data.unlocked.isNotEmpty) ...[
-                    Text('Desbloqueadas', style: theme.textTheme.titleLarge),
-                    const SizedBox(height: 12),
-                    for (final mona in data.unlocked)
-                      _MonaCard(mona: mona, state: _MonaState.unlocked),
-                    const SizedBox(height: 20),
-                  ],
-                  if (data.locked.isNotEmpty) ...[
-                    Text('Por descubrir', style: theme.textTheme.titleLarge),
-                    const SizedBox(height: 12),
-                    for (final mona in data.locked)
-                      _MonaCard(mona: mona, state: _MonaState.locked),
-                  ],
-                ],
+                ),
               ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
@@ -81,132 +117,189 @@ class MonasScreen extends ConsumerWidget {
 
 enum _MonaState { unlocked, inProgress, locked }
 
-class _MonaCard extends StatelessWidget {
-  const _MonaCard({required this.mona, required this.state});
+Color _rarityColor(BuildContext context, String? rarity) =>
+    switch (rarity) {
+      'LEGENDARY' => Colors.amber,
+      'EPIC' => Colors.purpleAccent,
+      'RARE' => Theme.of(context).colorScheme.tertiary,
+      _ => Theme.of(context).colorScheme.outline,
+    };
+
+/// Casilla del álbum. Tap: detalle de la mona.
+class _AlbumSlot extends StatelessWidget {
+  const _AlbumSlot({required this.mona, required this.state});
 
   final Mona mona;
   final _MonaState state;
 
-  Color _rarityColor(BuildContext context) => switch (mona.rarity) {
-        'LEGENDARY' => Colors.amber,
-        'EPIC' => Colors.purpleAccent,
-        'RARE' => Theme.of(context).colorScheme.tertiary,
-        _ => Theme.of(context).colorScheme.outline,
-      };
+  void _showDetail(BuildContext context) {
+    final theme = Theme.of(context);
+    final rarityColor = _rarityColor(context, mona.rarity);
+    final locked = state == _MonaState.locked;
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              locked ? Icons.lock_outline : Icons.emoji_events,
+              color: locked ? theme.colorScheme.outline : rarityColor,
+            ),
+            const SizedBox(width: 8),
+            Expanded(child: Text(locked ? '???' : mona.name)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              locked
+                  ? 'Sigue participando en la ECI para descubrir esta mona.'
+                  : mona.description ?? 'Logro de la comunidad AlphaECI.',
+            ),
+            const SizedBox(height: 12),
+            if (state == _MonaState.inProgress &&
+                mona.progressPercentage != null) ...[
+              AnimatedProgressBar(
+                  value: mona.progressPercentage! / 100, height: 8),
+              const SizedBox(height: 6),
+              Text(
+                '${mona.currentCount ?? 0}/${mona.requiredCount ?? 0} · '
+                '${mona.progressPercentage}%',
+                style: theme.textTheme.bodySmall,
+              ),
+              const SizedBox(height: 8),
+            ],
+            Text('+${mona.xpGranted} XP',
+                style: theme.textTheme.labelLarge),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cerrar'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final rarityColor = _rarityColor(context, mona.rarity);
     final locked = state == _MonaState.locked;
-    final rarityColor = _rarityColor(context);
 
-    return Opacity(
-      opacity: locked ? 0.55 : 1,
-      child: Card(
-        margin: const EdgeInsets.only(bottom: 10),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: locked
-                      ? null
-                      : LinearGradient(colors: [
-                          rarityColor.withValues(alpha: 0.7),
-                          rarityColor.withValues(alpha: 0.3),
-                        ]),
-                  color: locked ? scheme.outline.withValues(alpha: 0.2) : null,
-                ),
-                child: Icon(
-                  locked
-                      ? Icons.lock_outline
-                      : state == _MonaState.inProgress
-                          ? Icons.hourglass_bottom
-                          : Icons.emoji_events,
-                  color: locked ? scheme.onSurfaceVariant : Colors.white,
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(mona.name,
-                              style: theme.textTheme.titleMedium),
-                        ),
-                        const SizedBox(width: 8),
-                        if (mona.rarity != null)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: rarityColor.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Text(
-                              mona.rarity!,
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                color: rarityColor,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                    if (mona.description != null)
-                      Text(mona.description!,
-                          style: theme.textTheme.bodySmall),
-                    if (state == _MonaState.inProgress &&
-                        mona.progressPercentage != null) ...[
-                      const SizedBox(height: 8),
-                      AnimatedProgressBar(
-                        value: mona.progressPercentage! / 100,
-                        height: 7,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${mona.currentCount ?? 0}/${mona.requiredCount ?? 0}'
-                        ' · ${mona.progressPercentage}%',
-                        style: theme.textTheme.bodySmall,
-                      ),
-                    ],
+    return BouncyTap(
+      onTap: () => _showDetail(context),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(AppRadii.md),
+          gradient: locked
+              ? null
+              : LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    rarityColor.withValues(alpha: 0.55),
+                    rarityColor.withValues(alpha: 0.15),
                   ],
                 ),
-              ),
-              const SizedBox(width: 8),
-              Text('+${mona.xpGranted} XP',
-                  style: theme.textTheme.labelLarge),
-            ],
+          color: locked ? scheme.surface : null,
+          border: Border.all(
+            color: locked
+                ? scheme.outline.withValues(alpha: 0.4)
+                : rarityColor.withValues(alpha: 0.7),
+            width: locked ? 1 : 2,
           ),
+          boxShadow: locked ? null : AppShadows.soft(context),
+        ),
+        padding: const EdgeInsets.all(10),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Ícono de la pegatina (anillo de progreso si aplica).
+            SizedBox(
+              width: 52,
+              height: 52,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  if (state == _MonaState.inProgress)
+                    TweenAnimationBuilder<double>(
+                      tween: Tween(
+                        begin: 0,
+                        end: (mona.progressPercentage ?? 0) / 100,
+                      ),
+                      duration: const Duration(milliseconds: 800),
+                      curve: Curves.easeOutCubic,
+                      builder: (context, value, _) =>
+                          CircularProgressIndicator(
+                        value: value,
+                        strokeWidth: 4,
+                        backgroundColor:
+                            scheme.outline.withValues(alpha: 0.2),
+                      ),
+                    ),
+                  Icon(
+                    locked
+                        ? Icons.question_mark
+                        : state == _MonaState.inProgress
+                            ? Icons.hourglass_bottom
+                            : Icons.emoji_events,
+                    size: 30,
+                    color: locked
+                        ? scheme.outline
+                        : state == _MonaState.unlocked
+                            ? Colors.white
+                            : rarityColor,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              locked ? '???' : mona.name,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: locked
+                    ? scheme.onSurfaceVariant
+                    : state == _MonaState.unlocked
+                        ? Colors.white
+                        : scheme.onSurface,
+              ),
+            ),
+            if (!locked && mona.rarity != null) ...[
+              const SizedBox(height: 4),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                decoration: BoxDecoration(
+                  color: state == _MonaState.unlocked
+                      ? Colors.white.withValues(alpha: 0.25)
+                      : rarityColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  mona.rarity!,
+                  style: TextStyle(
+                    fontSize: 8,
+                    fontWeight: FontWeight.w800,
+                    color: state == _MonaState.unlocked
+                        ? Colors.white
+                        : rarityColor,
+                  ),
+                ),
+              ),
+            ],
+          ],
         ),
       ),
-    );
-  }
-}
-
-class _Stat extends StatelessWidget {
-  const _Stat({required this.value, required this.label});
-
-  final String value;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Column(
-      children: [
-        Text(value, style: theme.textTheme.headlineSmall),
-        Text(label, style: theme.textTheme.bodySmall),
-      ],
     );
   }
 }

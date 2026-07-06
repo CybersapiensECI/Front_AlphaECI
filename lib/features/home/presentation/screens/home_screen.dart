@@ -14,7 +14,21 @@ import '../../../notifications/presentation/providers/notification_provider.dart
 import '../../../parches/presentation/screens/parches_screen.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
 
-/// Shell principal: Descubrir · Matches · Parches · Eventos · Perfil.
+/// Tab activo del shell. Provider para poder navegar a un tab desde
+/// fuera (p. ej. tocar una notificación lleva a Matches o Eventos).
+final homeTabProvider = StateProvider<int>((_) => 0);
+
+/// Índices de tabs del shell (mantener en sincronía con _destinations).
+abstract final class HomeTabs {
+  static const inicio = 0;
+  static const parches = 1;
+  static const descubrir = 2;
+  static const matches = 3;
+  static const eventos = 4;
+  static const perfil = 5;
+}
+
+/// Shell principal: Inicio · Parches · Descubrir · Matches · Eventos · Perfil.
 /// Campana de notificaciones con badge en el AppBar.
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -24,7 +38,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  int _index = 0;
 
   // Inicio = publicaciones hechas desde parches (red social).
   // Parches = buscar/filtrar parches y unirse.
@@ -66,13 +79,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final unread = ref.watch(unreadCountProvider).valueOrNull ?? 0;
+    final index = ref.watch(homeTabProvider);
 
     return AdaptiveScaffold(
       destinations: _destinations,
-      selectedIndex: _index,
-      onDestinationSelected: (i) => setState(() => _index = i),
+      selectedIndex: index,
+      onDestinationSelected: (i) =>
+          ref.read(homeTabProvider.notifier).state = i,
       appBar: AppBar(
-        title: _index == 0
+        title: index == 0
             // Wordmark de marca con gradiente en el feed.
             ? ShaderMask(
                 shaderCallback: (bounds) =>
@@ -85,7 +100,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                 ),
               )
-            : Text(_destinations[_index].label),
+            : Text(_destinations[index].label),
         actions: [
           IconButton(
             tooltip: 'Chats',
@@ -136,7 +151,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: child,
           ),
         ),
-        child: switch (_index) {
+        child: switch (index) {
           0 => const FeedScreen(key: ValueKey('feed')),
           1 => const ParchesScreen(key: ValueKey('parches')),
           2 => const DiscoveryScreen(key: ValueKey('discovery')),

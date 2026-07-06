@@ -13,6 +13,7 @@ class MockNotificationRepository implements NotificationRepository {
       body: 'Carlos López quiere conectar contigo.',
       read: false,
       type: 'CONNECTION_REQUEST',
+      referenceId: 'm2',
       createdAt: DateTime.now().subtract(const Duration(minutes: 12)),
     ),
     AppNotification(
@@ -21,6 +22,7 @@ class MockNotificationRepository implements NotificationRepository {
       body: 'Te invitaron al Torneo de Smash Bros.',
       read: false,
       type: 'PARCHE_INVITATION',
+      referenceId: 'p3',
       createdAt: DateTime.now().subtract(const Duration(hours: 2)),
     ),
     AppNotification(
@@ -29,6 +31,7 @@ class MockNotificationRepository implements NotificationRepository {
       body: 'Taller de Liderazgo mañana a las 10:00.',
       read: true,
       type: 'EVENT_REMINDER',
+      referenceId: 'e2',
       createdAt: DateTime.now().subtract(const Duration(days: 1)),
     ),
   ];

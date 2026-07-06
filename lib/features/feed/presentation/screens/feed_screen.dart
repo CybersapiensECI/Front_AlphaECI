@@ -5,8 +5,9 @@ import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/animations.dart';
 import '../../../../core/widgets/async_value_view.dart';
-import '../../../../core/widgets/empty_state.dart';
+import '../../../../core/theme/app_assets.dart';
 import '../../../../core/widgets/glass_card.dart';
+import '../../../../core/widgets/mascot.dart';
 import '../../../../core/widgets/interest_chip.dart';
 import '../../../../core/widgets/loading_skeleton.dart';
 import '../../../../core/widgets/text_input_sheet.dart';
@@ -135,8 +136,8 @@ class FeedScreen extends ConsumerWidget {
             loading: const SkeletonList(),
             data: (items) {
               if (items.isEmpty) {
-                return EmptyState(
-                  icon: Icons.dynamic_feed_outlined,
+                return MascotEmptyState(
+                  asset: AppAssets.stickerConfused,
                   message: category == null
                       ? 'Aún no hay publicaciones.\nÚnete a un parche y '
                           'comparte el momento cuando esté ocurriendo.'

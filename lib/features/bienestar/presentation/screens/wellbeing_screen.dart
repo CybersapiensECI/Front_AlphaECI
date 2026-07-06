@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/theme/app_assets.dart';
 import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/animations.dart';
 import '../../../../core/widgets/async_value_view.dart';
 import '../../../../core/widgets/empty_state.dart';
+import '../../../../core/widgets/glass_card.dart';
 import '../../../../core/widgets/gradient_scaffold.dart';
+import '../../../../core/widgets/mascot.dart';
 import '../../domain/entities/wellbeing.dart';
 import '../providers/wellbeing_provider.dart';
 
@@ -35,6 +38,27 @@ class WellbeingScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // ── Mensaje de la mascota ──────────────────
+                FadeSlideIn(
+                  child: GlassCard(
+                    child: Row(
+                      children: [
+                        const MascotSticker(
+                            asset: AppAssets.stickerLove, size: 64),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Text(
+                            'Cuidarte también es parte del parche. 💙\n'
+                            'Aquí tienes recursos y gente lista para '
+                            'apoyarte.',
+                            style: theme.textTheme.bodyMedium,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
                 // ── Contactos de emergencia ────────────────
                 FadeSlideIn(
                   child: Card(

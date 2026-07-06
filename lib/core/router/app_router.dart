@@ -120,9 +120,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.chatRoom,
         pageBuilder: (_, state) {
-          final conversation = state.extra;
-          if (conversation is ChatConversation) {
-            return _page(state, ChatRoomScreen(conversation: conversation));
+          final extra = state.extra;
+          if (extra is ChatConversation) {
+            return _page(state, ChatRoomScreen(conversation: extra));
+          }
+          // Chat grupal del parche.
+          if (extra is Parche) {
+            return _page(state, ChatRoomScreen.group(parche: extra));
           }
           return _page(state, const ChatsScreen());
         },

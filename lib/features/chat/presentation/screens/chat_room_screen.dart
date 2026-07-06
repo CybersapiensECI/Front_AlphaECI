@@ -11,15 +11,22 @@ import '../../../../core/widgets/gradient_scaffold.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/presentation/widgets/auth_layout.dart'
     show showAppSnackBar;
+import '../../../parches/domain/entities/parche.dart';
 import '../../../profile/presentation/widgets/profile_avatar.dart';
 import '../../domain/entities/chat.dart';
 import '../providers/chat_provider.dart';
 
 /// Sala de chat en tiempo real: burbujas + input, auto-scroll al final.
+/// Directo (conversation) o grupal de parche (ChatRoomScreen.group).
 class ChatRoomScreen extends ConsumerStatefulWidget {
-  const ChatRoomScreen({super.key, required this.conversation});
+  const ChatRoomScreen({super.key, required ChatConversation this.conversation})
+      : parche = null;
 
-  final ChatConversation conversation;
+  const ChatRoomScreen.group({super.key, required Parche this.parche})
+      : conversation = null;
+
+  final ChatConversation? conversation;
+  final Parche? parche;
 
   @override
   ConsumerState<ChatRoomScreen> createState() => _ChatRoomScreenState();
@@ -37,7 +44,10 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
     '✨', '🤓', '🙏', '🫶',
   ];
 
-  String get _roomId => widget.conversation.connection.chatRoomId;
+  // TODO(backend): confirmar convención de sala grupal en chat-service;
+  // por ahora la sala del parche usa su id.
+  String get _roomId =>
+      widget.conversation?.connection.chatRoomId ?? widget.parche!.id;
 
   @override
   void dispose() {
@@ -77,21 +87,46 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
     // Auto-scroll cuando llegan mensajes.
     ref.listen(chatRoomProvider(_roomId), (_, _) => _scrollToBottom());
 
+    final parche = widget.parche;
+    final (categoryIcon, categoryColor) =
+        AppCategoryStyles.of(parche?.category);
+
     return GradientScaffold(
       appBar: AppBar(
         title: Row(
           children: [
-            ProfileAvatar(
-              name: widget.conversation.profile.name,
-              photoUrl: widget.conversation.profile.photoUrl,
-              radius: 16,
-            ),
+            if (parche != null)
+              // Chat grupal: burbuja con color de categoría del parche.
+              CircleAvatar(
+                radius: 16,
+                backgroundColor: categoryColor,
+                child: Icon(categoryIcon, size: 18, color: Colors.white),
+              )
+            else
+              ProfileAvatar(
+                name: widget.conversation!.profile.name,
+                photoUrl: widget.conversation!.profile.photoUrl,
+                radius: 16,
+              ),
             const SizedBox(width: 10),
             Flexible(
-              child: Text(
-                widget.conversation.profile.name,
-                overflow: TextOverflow.ellipsis,
-              ),
+              child: parche != null
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(parche.name,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.titleMedium),
+                        Text(
+                          '${parche.memberCount} integrantes',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    )
+                  : Text(
+                      widget.conversation!.profile.name,
+                      overflow: TextOverflow.ellipsis,
+                    ),
             ),
           ],
         ),
