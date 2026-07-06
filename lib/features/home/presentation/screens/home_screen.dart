@@ -107,6 +107,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             onPressed: () => context.push(Routes.chats),
             icon: const Icon(Icons.chat_bubble_outline),
           ),
+          // Mapa del campus con parches en tiempo real.
+          IconButton(
+            tooltip: 'Mapa de parches',
+            onPressed: () => context.push(Routes.zone),
+            icon: const Icon(Icons.map_outlined),
+          ),
           // Campana con badge animado.
           IconButton(
             tooltip: 'Notificaciones',
