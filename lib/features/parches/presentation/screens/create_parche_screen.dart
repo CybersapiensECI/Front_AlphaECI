@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/constants/campus_places.dart';
+import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../core/widgets/app_button.dart';
@@ -10,7 +12,10 @@ import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/gradient_scaffold.dart';
 import '../../../auth/presentation/widgets/auth_layout.dart'
     show showAppSnackBar;
+import '../../../matching/presentation/providers/matching_provider.dart';
+import '../../../profile/presentation/widgets/profile_avatar.dart';
 import '../providers/parche_provider.dart';
+import 'parches_screen.dart' show kParcheCategories;
 
 /// Crear parche — espejo de CreateParcheCommand.
 /// TODO(backend): confirmar valores válidos de los enums Places y
@@ -27,20 +32,21 @@ class _CreateParcheScreenState extends ConsumerState<CreateParcheScreen> {
   final _formKey = GlobalKey<FormState>();
   final _name = TextEditingController();
   final _description = TextEditingController();
-  final _place = TextEditingController();
-  final _category = TextEditingController();
   final _quota = TextEditingController(text: '5');
+  String? _place;
+  String? _category;
   DateTime? _date;
   TimeOfDay? _hour;
   bool _isPrivate = false;
   bool _loading = false;
 
+  /// Amistades a invitar al crear (solo parche privado).
+  final _invitees = <String>{};
+
   @override
   void dispose() {
     _name.dispose();
     _description.dispose();
-    _place.dispose();
-    _category.dispose();
     _quota.dispose();
     super.dispose();
   }
@@ -66,6 +72,10 @@ class _CreateParcheScreenState extends ConsumerState<CreateParcheScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_place == null || _category == null) {
+      showAppSnackBar(context, 'Elige lugar y categoría del parche.');
+      return;
+    }
     if (_date == null || _hour == null) {
       showAppSnackBar(context, 'Elige fecha y hora del parche.');
       return;
@@ -76,8 +86,8 @@ class _CreateParcheScreenState extends ConsumerState<CreateParcheScreen> {
     final result = await ref.read(parcheActionsProvider).create(
           name: _name.text.trim(),
           description: _description.text.trim(),
-          place: _place.text.trim(),
-          category: _category.text.trim(),
+          place: _place!,
+          category: _category!,
           type: _isPrivate ? 'PRIVATE' : 'PUBLIC',
           date: _date!,
           hour: hourString,
@@ -85,12 +95,27 @@ class _CreateParcheScreenState extends ConsumerState<CreateParcheScreen> {
         );
     if (!mounted) return;
     setState(() => _loading = false);
-    result.when(
-      success: (_) {
-        showAppSnackBar(context, '¡Parche creado! 🎉');
+    await result.when(
+      success: (parcheId) async {
+        // Parche privado: enviar invitaciones a las amistades marcadas.
+        var sent = 0;
+        if (_isPrivate && _invitees.isNotEmpty) {
+          final actions = ref.read(parcheActionsProvider);
+          for (final id in _invitees) {
+            final invitation = await actions.invite(parcheId, id);
+            if (invitation.isSuccess) sent++;
+          }
+        }
+        if (!mounted) return;
+        showAppSnackBar(
+          context,
+          sent > 0
+              ? '¡Parche creado! $sent invitación(es) enviada(s) 🎉'
+              : '¡Parche creado! 🎉',
+        );
         context.pop();
       },
-      error: (failure) => showAppSnackBar(context, failure.message),
+      error: (failure) async => showAppSnackBar(context, failure.message),
     );
   }
 
@@ -124,16 +149,44 @@ class _CreateParcheScreenState extends ConsumerState<CreateParcheScreen> {
                         Validators.required(v, 'La descripción'),
                   ),
                   const SizedBox(height: 16),
-                  AppTextField(
-                    label: 'Lugar (ej. Cafetería central)',
-                    controller: _place,
-                    validator: (v) => Validators.required(v, 'El lugar'),
+                  // Lugar del campus: alimenta el mapa de geolocalización.
+                  DropdownButtonFormField<String>(
+                    initialValue: _place,
+                    decoration: const InputDecoration(
+                      labelText: 'Lugar del campus',
+                      prefixIcon: Icon(Icons.place_outlined),
+                    ),
+                    items: [
+                      for (final place in campusPlaces.keys)
+                        DropdownMenuItem(value: place, child: Text(place)),
+                    ],
+                    onChanged: (v) => setState(() => _place = v),
                   ),
                   const SizedBox(height: 16),
-                  AppTextField(
-                    label: 'Categoría (ej. DEPORTE, ESTUDIO, JUEGOS)',
-                    controller: _category,
-                    validator: (v) => Validators.required(v, 'La categoría'),
+                  DropdownButtonFormField<String>(
+                    initialValue: _category,
+                    decoration: const InputDecoration(
+                      labelText: 'Categoría',
+                      prefixIcon: Icon(Icons.category_outlined),
+                    ),
+                    items: [
+                      for (final category in kParcheCategories)
+                        DropdownMenuItem(
+                          value: category,
+                          child: Row(
+                            children: [
+                              Icon(
+                                AppCategoryStyles.of(category).$1,
+                                size: 18,
+                                color: AppCategoryStyles.of(category).$2,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(category),
+                            ],
+                          ),
+                        ),
+                    ],
+                    onChanged: (v) => setState(() => _category = v),
                   ),
                   const SizedBox(height: 16),
                   Row(
@@ -183,6 +236,63 @@ class _CreateParcheScreenState extends ConsumerState<CreateParcheScreen> {
                     value: _isPrivate,
                     onChanged: (v) => setState(() => _isPrivate = v),
                   ),
+                  // Privado: elegir amistades a invitar al crear.
+                  if (_isPrivate) ...[
+                    const SizedBox(height: 8),
+                    Text('Invitar amistades',
+                        style: theme.textTheme.titleMedium),
+                    const SizedBox(height: 8),
+                    Consumer(
+                      builder: (context, ref, _) {
+                        final friends = ref.watch(friendsProvider);
+                        return friends.when(
+                          loading: () => const Padding(
+                            padding: EdgeInsets.all(12),
+                            child: Center(
+                                child: CircularProgressIndicator()),
+                          ),
+                          error: (e, _) => Text(
+                            'No se pudieron cargar tus amistades.',
+                            style: theme.textTheme.bodySmall,
+                          ),
+                          data: (items) {
+                            if (items.isEmpty) {
+                              return Text(
+                                'Aún no tienes amistades. Conecta en '
+                                'Descubrir para poder invitar.',
+                                style: theme.textTheme.bodySmall,
+                              );
+                            }
+                            return Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                for (final friend in items)
+                                  FilterChip(
+                                    avatar: ProfileAvatar(
+                                      name: friend.profile.name,
+                                      photoUrl: friend.profile.photoUrl,
+                                      radius: 12,
+                                    ),
+                                    label: Text(friend.profile.name),
+                                    selected: _invitees
+                                        .contains(friend.profile.id),
+                                    onSelected: (v) => setState(() {
+                                      if (v) {
+                                        _invitees.add(friend.profile.id);
+                                      } else {
+                                        _invitees
+                                            .remove(friend.profile.id);
+                                      }
+                                    }),
+                                  ),
+                              ],
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ],
                   const SizedBox(height: 16),
                   AppButton(
                     label: 'Crear parche',

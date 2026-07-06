@@ -151,6 +151,18 @@ final sentMatchesProvider =
   );
 });
 
+/// Amistades: conexiones ACCEPTED (recibidas + enviadas), sin duplicados.
+final friendsProvider = FutureProvider<List<MatchWithProfile>>((ref) async {
+  final received = await ref.watch(receivedMatchesProvider.future);
+  final sent = await ref.watch(sentMatchesProvider.future);
+  final seen = <String>{};
+  return [
+    for (final m in [...received, ...sent])
+      if (m.match.status == MatchStatus.accepted && seen.add(m.profile.id))
+        m,
+  ];
+});
+
 /// Aceptar/rechazar una solicitud recibida.
 final matchActionsProvider = Provider<MatchActions>((ref) => MatchActions(ref));
 

@@ -57,7 +57,8 @@ class _FadeSlideInState extends State<FadeSlideIn>
   }
 }
 
-/// Rebote sutil al presionar (escala 0.96). Envuelve cards interactivas.
+/// Rebote sutil al presionar (escala 0.96) y al hover (1.02 en desktop/web).
+/// Envuelve cards interactivas, chips y botones.
 class BouncyTap extends StatefulWidget {
   const BouncyTap({super.key, required this.child, this.onTap});
 
@@ -70,19 +71,30 @@ class BouncyTap extends StatefulWidget {
 
 class _BouncyTapState extends State<BouncyTap> {
   bool _pressed = false;
+  bool _hovered = false;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapCancel: () => setState(() => _pressed = false),
-      onTapUp: (_) => setState(() => _pressed = false),
-      onTap: widget.onTap,
-      child: AnimatedScale(
-        scale: _pressed ? 0.96 : 1,
-        duration: const Duration(milliseconds: 120),
-        curve: Curves.easeOut,
-        child: widget.child,
+    return MouseRegion(
+      cursor:
+          widget.onTap != null ? SystemMouseCursors.click : MouseCursor.defer,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapCancel: () => setState(() => _pressed = false),
+        onTapUp: (_) => setState(() => _pressed = false),
+        onTap: widget.onTap,
+        child: AnimatedScale(
+          scale: _pressed
+              ? 0.96
+              : _hovered
+                  ? 1.02
+                  : 1,
+          duration: const Duration(milliseconds: 120),
+          curve: Curves.easeOut,
+          child: widget.child,
+        ),
       ),
     );
   }

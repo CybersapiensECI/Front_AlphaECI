@@ -29,6 +29,9 @@ dependencies:
   stomp_dart_client: ^2.0.0
   # Tipografía de marca (Montserrat titulares + Inter cuerpo)
   google_fonts: ^6.2.1
+  # Mapa del campus (OpenStreetMap, sin API key) para geolocalización
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
 
 dev_dependencies:
   flutter_test:
@@ -38,3 +41,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  assets:
+    - assets/brand/
+    - assets/stickers/

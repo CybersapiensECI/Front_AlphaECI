@@ -37,7 +37,7 @@ class _ProfileBody extends ConsumerWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
       child: Center(
         child: ConstrainedBox(
           constraints:

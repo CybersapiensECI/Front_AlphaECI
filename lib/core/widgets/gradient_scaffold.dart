@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
-/// Fondo con "blobs" radiales de marca que flotan lentamente.
-/// Barato: solo gradientes radiales + una animación de 20s, sin filtros.
+/// Fondo con "blobs" radiales de marca que flotan lentamente y REACCIONAN
+/// al usuario: se inclinan sutilmente hacia el dedo/puntero y emiten un
+/// pulso suave al tocar. Barato: gradientes radiales + 2 controllers,
+/// sin filtros ni shaders.
 class FloatingBlobBackground extends StatefulWidget {
   const FloatingBlobBackground({super.key, required this.child});
 
@@ -13,16 +15,34 @@ class FloatingBlobBackground extends StatefulWidget {
 }
 
 class _FloatingBlobBackgroundState extends State<FloatingBlobBackground>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
+    with TickerProviderStateMixin {
+  late final AnimationController _drift = AnimationController(
     vsync: this,
     duration: const Duration(seconds: 20),
   )..repeat(reverse: true);
 
+  late final AnimationController _pulse = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 700),
+  );
+
+  /// Posición del puntero en coordenadas Alignment (-1..1).
+  /// Se interpola en cada frame del drift: reacción suave, sin jank.
+  Alignment _pointerTarget = Alignment.center;
+  Alignment _pointer = Alignment.center;
+
   @override
   void dispose() {
-    _controller.dispose();
+    _drift.dispose();
+    _pulse.dispose();
     super.dispose();
+  }
+
+  void _updatePointer(Offset position, Size size) {
+    _pointerTarget = Alignment(
+      (position.dx / size.width) * 2 - 1,
+      (position.dy / size.height) * 2 - 1,
+    );
   }
 
   @override
@@ -31,37 +51,76 @@ class _FloatingBlobBackgroundState extends State<FloatingBlobBackground>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final alpha = isDark ? 0.20 : 0.14;
 
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        ColoredBox(color: Theme.of(context).scaffoldBackgroundColor),
-        AnimatedBuilder(
-          animation: _controller,
-          builder: (context, _) {
-            final t = _controller.value;
-            return Stack(
-              children: [
-                _Blob(
-                  alignment: Alignment(-1.2 + 0.3 * t, -1.1 + 0.2 * t),
-                  color: scheme.primary.withValues(alpha: alpha),
-                  size: 420,
-                ),
-                _Blob(
-                  alignment: Alignment(1.3 - 0.25 * t, -0.2 + 0.3 * t),
-                  color: scheme.tertiary.withValues(alpha: alpha),
-                  size: 360,
-                ),
-                _Blob(
-                  alignment: Alignment(-0.3 + 0.2 * t, 1.3 - 0.2 * t),
-                  color: scheme.secondary.withValues(alpha: alpha * 0.8),
-                  size: 380,
-                ),
-              ],
-            );
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final size = constraints.biggest;
+        return Listener(
+          behavior: HitTestBehavior.translucent,
+          onPointerHover: (e) => _updatePointer(e.localPosition, size),
+          onPointerMove: (e) => _updatePointer(e.localPosition, size),
+          onPointerDown: (e) {
+            _updatePointer(e.localPosition, size);
+            _pulse.forward(from: 0);
           },
-        ),
-        widget.child,
-      ],
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              ColoredBox(color: Theme.of(context).scaffoldBackgroundColor),
+              AnimatedBuilder(
+                animation: Listenable.merge([_drift, _pulse]),
+                builder: (context, _) {
+                  final t = _drift.value;
+                  // Persecución suave del puntero (lerp por frame).
+                  _pointer =
+                      Alignment.lerp(_pointer, _pointerTarget, 0.06)!;
+                  // Pulso al tocar: crece y se desvanece (curva campana).
+                  final p = _pulse.isAnimating
+                      ? Curves.easeOut.transform(_pulse.value)
+                      : 0.0;
+                  final pulseScale = 1 + 0.10 * (1 - p) * (p > 0 ? 1 : 0);
+
+                  Alignment follow(Alignment base, double strength) =>
+                      Alignment(
+                        base.x + (_pointer.x - base.x) * strength,
+                        base.y + (_pointer.y - base.y) * strength,
+                      );
+
+                  return Stack(
+                    children: [
+                      _Blob(
+                        alignment: follow(
+                          Alignment(-1.2 + 0.3 * t, -1.1 + 0.2 * t),
+                          0.18,
+                        ),
+                        color: scheme.primary.withValues(alpha: alpha),
+                        size: 420 * pulseScale,
+                      ),
+                      _Blob(
+                        alignment: follow(
+                          Alignment(1.3 - 0.25 * t, -0.2 + 0.3 * t),
+                          0.26,
+                        ),
+                        color: scheme.tertiary.withValues(alpha: alpha),
+                        size: 360 * pulseScale,
+                      ),
+                      _Blob(
+                        alignment: follow(
+                          Alignment(-0.3 + 0.2 * t, 1.3 - 0.2 * t),
+                          0.12,
+                        ),
+                        color:
+                            scheme.secondary.withValues(alpha: alpha * 0.8),
+                        size: 380,
+                      ),
+                    ],
+                  );
+                },
+              ),
+              widget.child,
+            ],
+          ),
+        );
+      },
     );
   }
 }

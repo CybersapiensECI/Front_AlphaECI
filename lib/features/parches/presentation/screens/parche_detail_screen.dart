@@ -6,6 +6,7 @@ import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/animations.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/gradient_scaffold.dart';
+import '../../../../core/widgets/text_input_sheet.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/presentation/widgets/auth_layout.dart'
     show showAppSnackBar;
@@ -56,30 +57,12 @@ class _ParcheDetailScreenState extends ConsumerState<ParcheDetailScreen> {
   }
 
   Future<void> _comment(String postId) async {
-    final controller = TextEditingController();
-    final text = await showDialog<String>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Comentar'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: const InputDecoration(hintText: 'Tu comentario…'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () =>
-                Navigator.of(dialogContext).pop(controller.text.trim()),
-            child: const Text('Publicar'),
-          ),
-        ],
-      ),
+    final text = await showTextInputSheet(
+      context,
+      title: 'Comentar',
+      hint: 'Tu comentario…',
+      submitLabel: 'Comentar',
     );
-    controller.dispose();
     if (text == null || text.isEmpty || !mounted) return;
     final result = await ref
         .read(parcheActionsProvider)

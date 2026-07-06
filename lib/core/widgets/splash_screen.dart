@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/design_tokens.dart';
 import 'gradient_scaffold.dart';
+import 'mascot.dart';
 
 /// Pantalla mostrada mientras se restaura la sesión al arrancar.
 class SplashScreen extends StatelessWidget {
@@ -9,26 +10,14 @@ class SplashScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     return GradientScaffold(
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Hero(
+            const Hero(
               tag: 'app-logo',
-              child: Container(
-                width: 88,
-                height: 88,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: AppGradients.of(context),
-                  boxShadow: AppShadows.glow(scheme.primary),
-                ),
-                child:
-                    const Icon(Icons.hub_outlined, size: 44, color: Colors.white),
-              ),
+              child: BrandLogo(size: 96),
             ),
             const SizedBox(height: AppSpacing.md),
             ShaderMask(

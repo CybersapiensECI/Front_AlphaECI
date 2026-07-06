@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/theme/app_assets.dart';
+import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/animations.dart';
 import '../../../../core/widgets/async_value_view.dart';
-import '../../../../core/widgets/empty_state.dart';
+import '../../../../core/widgets/interest_chip.dart';
+import '../../../../core/widgets/mascot.dart';
 import '../../../auth/presentation/widgets/auth_layout.dart'
     show showAppSnackBar;
 import '../../domain/entities/event.dart';
@@ -25,25 +28,26 @@ class EventsScreen extends ConsumerWidget {
 
     return Column(
       children: [
-        // Filtros por categoría.
+        // Filtros por categoría con colores de marca (mismos del feed).
         SizedBox(
-          height: 56,
+          height: 44,
           child: ListView(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             children: [
-              ChoiceChip(
-                label: const Text('Todos'),
+              InterestChip(
+                label: 'Todos',
                 selected: selectedCategory == null,
-                onSelected: (_) =>
+                onTap: () =>
                     ref.read(eventCategoryProvider.notifier).state = null,
               ),
               const SizedBox(width: 8),
               for (final category in _categories) ...[
-                ChoiceChip(
-                  label: Text(category),
+                InterestChip(
+                  label: category,
                   selected: selectedCategory == category,
-                  onSelected: (_) => ref
+                  accent: AppCategoryStyles.of(category).$2,
+                  onTap: () => ref
                       .read(eventCategoryProvider.notifier)
                       .state = category,
                 ),
@@ -58,15 +62,18 @@ class EventsScreen extends ConsumerWidget {
             onRetry: () => ref.invalidate(eventsProvider),
             data: (items) {
               if (items.isEmpty) {
-                return const EmptyState(
-                  icon: Icons.event_outlined,
-                  message: 'No hay eventos en esta categoría.',
+                return MascotEmptyState(
+                  asset: AppAssets.stickerSleepy,
+                  message: selectedCategory == null
+                      ? 'Nada por aquí todavía.\nLos eventos del campus '
+                          'aparecerán en este espacio.'
+                      : 'No hay eventos de $selectedCategory por ahora.',
                 );
               }
               return RefreshIndicator(
                 onRefresh: () async => ref.invalidate(eventsProvider),
                 child: ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
                   itemCount: items.length,
                   itemBuilder: (context, index) => FadeSlideIn(
                     delay: Duration(milliseconds: 50 * index),
@@ -128,6 +135,8 @@ class _EventCardState extends ConsumerState<_EventCard> {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final soldOut = !event.hasCapacity && !widget.confirmed;
+    final (categoryIcon, categoryColor) =
+        AppCategoryStyles.of(event.category);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -141,10 +150,10 @@ class _EventCardState extends ConsumerState<_EventCard> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: scheme.tertiary.withValues(alpha: 0.15),
+                    color: categoryColor.withValues(alpha: 0.18),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(Icons.event_outlined, color: scheme.primary),
+                  child: Icon(categoryIcon, color: categoryColor),
                 ),
                 const SizedBox(width: 12),
                 Expanded(

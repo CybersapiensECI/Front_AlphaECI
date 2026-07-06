@@ -7,6 +7,7 @@ import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/widgets/adaptive_scaffold.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../events/presentation/screens/events_screen.dart';
+import '../../../feed/presentation/screens/feed_screen.dart';
 import '../../../matching/presentation/screens/discovery_screen.dart';
 import '../../../matching/presentation/screens/matches_screen.dart';
 import '../../../notifications/presentation/providers/notification_provider.dart';
@@ -25,7 +26,8 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _index = 0;
 
-  // Inicio = feed de parches (estilo red social, filtrable por categoría).
+  // Inicio = publicaciones hechas desde parches (red social).
+  // Parches = buscar/filtrar parches y unirse.
   static const _destinations = [
     AdaptiveDestination(
       icon: Icons.home_outlined,
@@ -33,8 +35,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       label: 'Inicio',
     ),
     AdaptiveDestination(
-      icon: Icons.explore_outlined,
-      selectedIcon: Icons.explore,
+      icon: Icons.groups_outlined,
+      selectedIcon: Icons.groups,
+      label: 'Parches',
+    ),
+    // join_inner: dos círculos que se cruzan = afinidad entre personas
+    // (nada de brújula: eso sugiere geolocalización).
+    AdaptiveDestination(
+      icon: Icons.join_inner,
+      selectedIcon: Icons.join_full,
       label: 'Descubrir',
     ),
     AdaptiveDestination(
@@ -128,10 +137,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ),
         child: switch (_index) {
-          0 => const ParchesScreen(key: ValueKey('feed')),
-          1 => const DiscoveryScreen(key: ValueKey('discovery')),
-          2 => const MatchesScreen(key: ValueKey('matches')),
-          3 => const EventsScreen(key: ValueKey('events')),
+          0 => const FeedScreen(key: ValueKey('feed')),
+          1 => const ParchesScreen(key: ValueKey('parches')),
+          2 => const DiscoveryScreen(key: ValueKey('discovery')),
+          3 => const MatchesScreen(key: ValueKey('matches')),
+          4 => const EventsScreen(key: ValueKey('events')),
           _ => const ProfileScreen(key: ValueKey('profile')),
         },
       ),

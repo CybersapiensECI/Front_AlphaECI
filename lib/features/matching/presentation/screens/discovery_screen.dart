@@ -90,7 +90,7 @@ class _DiscoveryScreenState extends ConsumerState<DiscoveryScreen> {
         }
 
         return Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 96),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
           child: Column(
             children: [
               Expanded(

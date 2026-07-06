@@ -45,6 +45,25 @@ class MockParcheRepository implements ParcheRepository {
       ],
     ),
     Parche(
+      id: 'p4',
+      name: 'Cine al parque ECI',
+      description: 'Proyección al aire libre. Entrada libre, trae manta.',
+      place: 'Plazoleta central',
+      category: 'CULTURA',
+      type: 'PUBLIC',
+      // Hoy: habilita el composer del feed en demo.
+      date: DateTime.now(),
+      hour: '18:00',
+      maximumQuota: 30,
+      status: 'ACTIVE',
+      creatorStudentId: _me,
+      members: const [
+        ParcheMember(studentId: _me, role: 'CREATOR'),
+        ParcheMember(studentId: 'u2', role: 'STUDENT'),
+        ParcheMember(studentId: 'u5', role: 'STUDENT'),
+      ],
+    ),
+    Parche(
       id: 'p3',
       name: 'Torneo de Smash Bros',
       description: 'Traigan sus controles. Hay premio 🏆',
@@ -61,12 +80,42 @@ class MockParcheRepository implements ParcheRepository {
   ];
 
   final Map<String, List<ParchePost>> _posts = {
+    'p1': [
+      ParchePost(
+        id: 'post2',
+        authorId: 'u2',
+        text: 'Ya reservé la cancha para el viernes 🔥 Nos vemos 4pm.',
+        createdAt: DateTime.now().subtract(const Duration(hours: 5)),
+      ),
+      ParchePost(
+        id: 'post3',
+        authorId: 'u5',
+        text: 'Yo llevo los petos y el balón ⚽',
+        createdAt: DateTime.now().subtract(const Duration(hours: 2)),
+      ),
+    ],
     'p2': [
       ParchePost(
         id: 'post1',
         authorId: 'u4',
         text: 'Confirmen quiénes vienen para reservar la sala 👇',
         createdAt: DateTime.now().subtract(const Duration(hours: 3)),
+      ),
+    ],
+    'p3': [
+      ParchePost(
+        id: 'post4',
+        authorId: 'u3',
+        text: 'Cupos casi llenos, confirmen su control 🎮🏆',
+        createdAt: DateTime.now().subtract(const Duration(hours: 8)),
+      ),
+    ],
+    'p4': [
+      ParchePost(
+        id: 'post5',
+        authorId: 'u2',
+        text: 'El plan de hoy pinta brutal 🎬🍿 ¿Quién más viene?',
+        createdAt: DateTime.now().subtract(const Duration(minutes: 40)),
       ),
     ],
   };

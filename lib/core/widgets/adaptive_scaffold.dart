@@ -46,10 +46,11 @@ class AdaptiveScaffold extends StatelessWidget {
         final isDesktop = width >= Breakpoints.desktop;
 
         if (isMobile) {
+          // extendBody false: la barra tiene su propio espacio,
+          // no se superpone al contenido.
           return GradientScaffold(
             appBar: appBar,
             body: body,
-            extendBody: true,
             bottomNavigationBar: AnimatedBottomNav(
               destinations: destinations,
               selectedIndex: selectedIndex,

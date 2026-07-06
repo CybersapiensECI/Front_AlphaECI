@@ -4,30 +4,24 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/router/routes.dart';
+import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/animations.dart';
 import '../../../../core/widgets/async_value_view.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/interest_chip.dart';
 import '../../../../core/widgets/loading_skeleton.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../auth/presentation/widgets/auth_layout.dart'
+    show showAppSnackBar;
 import '../../domain/entities/parche.dart';
 import '../providers/parche_provider.dart';
+import '../widgets/friend_picker.dart';
 
 /// Categorías del feed. TODO(backend): confirmar valores del enum
 /// ParcheCategory sembrados en Parches-Service.
-const _feedCategories = ['DEPORTE', 'ESTUDIO', 'JUEGOS', 'CULTURA', 'COMIDA'];
-
-/// Ícono y color por categoría (identidad visual del feed).
-(IconData, Color) categoryStyle(String? category, ColorScheme scheme) {
-  return switch (category?.toUpperCase()) {
-    'DEPORTE' => (Icons.sports_soccer, scheme.tertiary),
-    'ESTUDIO' => (Icons.menu_book_outlined, scheme.primary),
-    'JUEGOS' => (Icons.sports_esports_outlined, scheme.secondary),
-    'CULTURA' => (Icons.theater_comedy_outlined, scheme.tertiary),
-    'COMIDA' => (Icons.restaurant_outlined, scheme.secondary),
-    _ => (Icons.celebration_outlined, scheme.primary),
-  };
-}
+const kParcheCategories =
+    ['DEPORTE', 'ESTUDIO', 'JUEGOS', 'CULTURA', 'COMIDA'];
 
 /// Feed de parches con búsqueda y FAB para crear.
 class ParchesScreen extends ConsumerStatefulWidget {
@@ -37,8 +31,12 @@ class ParchesScreen extends ConsumerStatefulWidget {
   ConsumerState<ParchesScreen> createState() => _ParchesScreenState();
 }
 
+/// Alcance del listado: todos, creados por mí, o a los que pertenezco.
+enum _ParcheScope { todos, mios, unidos }
+
 class _ParchesScreenState extends ConsumerState<ParchesScreen> {
   final _search = TextEditingController();
+  _ParcheScope _scope = _ParcheScope.todos;
 
   @override
   void dispose() {
@@ -53,15 +51,11 @@ class _ParchesScreenState extends ConsumerState<ParchesScreen> {
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      // Padding inferior: no chocar con la barra de navegación flotante.
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 72),
-        child: FloatingActionButton.extended(
-          heroTag: 'create-parche',
-          onPressed: () => context.push(Routes.createParche),
-          icon: const Icon(Icons.add),
-          label: const Text('Crear parche'),
-        ),
+      floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'create-parche',
+        onPressed: () => context.push(Routes.createParche),
+        icon: const Icon(Icons.add),
+        label: const Text('Crear parche'),
       ),
       body: Column(
         children: [
@@ -107,10 +101,11 @@ class _ParchesScreenState extends ConsumerState<ParchesScreen> {
                       ParcheFilter(query: filter.query),
                 ),
                 const SizedBox(width: 8),
-                for (final category in _feedCategories) ...[
+                for (final category in kParcheCategories) ...[
                   InterestChip(
                     label: category,
                     selected: filter.category == category,
+                    accent: AppCategoryStyles.of(category).$2,
                     onTap: () =>
                         ref.read(parcheFilterProvider.notifier).state =
                             ParcheFilter(
@@ -123,25 +118,70 @@ class _ParchesScreenState extends ConsumerState<ParchesScreen> {
               ],
             ),
           ),
+          const SizedBox(height: 8),
+          // Alcance: todos / creados por mí / a los que pertenezco.
+          SizedBox(
+            height: 40,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              children: [
+                for (final (scope, label) in const [
+                  (_ParcheScope.todos, 'Todos'),
+                  (_ParcheScope.mios, 'Creados por mí'),
+                  (_ParcheScope.unidos, 'Mis parches'),
+                ]) ...[
+                  InterestChip(
+                    label: label,
+                    selected: _scope == scope,
+                    onTap: () => setState(() => _scope = scope),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+              ],
+            ),
+          ),
           const SizedBox(height: 4),
           Expanded(
             child: AsyncValueView<List<Parche>>(
               value: feed,
               onRetry: () => ref.invalidate(parcheFeedProvider),
               loading: const SkeletonList(),
-              data: (parches) {
+              data: (allParches) {
+                final userId =
+                    ref.watch(authControllerProvider).session?.userId ?? '';
+                final parches = switch (_scope) {
+                  _ParcheScope.todos => allParches,
+                  _ParcheScope.mios => [
+                      for (final p in allParches)
+                        if (p.isCreator(userId)) p,
+                    ],
+                  _ParcheScope.unidos => [
+                      for (final p in allParches)
+                        if (p.isMember(userId) && !p.isCreator(userId)) p,
+                    ],
+                };
                 if (parches.isEmpty) {
-                  return const EmptyState(
+                  return EmptyState(
                     icon: Icons.groups_outlined,
-                    message:
+                    message: switch (_scope) {
+                      _ParcheScope.todos =>
                         'No hay parches activos.\n¡Crea el primero y arma '
-                        'el plan!',
+                            'el plan!',
+                      _ParcheScope.mios =>
+                        'Aún no has creado parches.\nUsa el botón '
+                            '"Crear parche".',
+                      _ParcheScope.unidos =>
+                        'No perteneces a ningún parche.\nÚnete desde '
+                            '"Todos".',
+                    },
                   );
                 }
                 return RefreshIndicator(
                   onRefresh: () async => ref.invalidate(parcheFeedProvider),
                   child: ListView.builder(
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 88),
+                    // 88: espacio para el FAB extendido.
                     itemCount: parches.length,
                     itemBuilder: (context, index) => FadeSlideIn(
                       delay: Duration(milliseconds: 50 * index),
@@ -164,21 +204,39 @@ class _ParchesScreenState extends ConsumerState<ParchesScreen> {
   }
 }
 
-class ParcheCard extends StatelessWidget {
+class ParcheCard extends ConsumerWidget {
   const ParcheCard({super.key, required this.parche});
 
   final Parche parche;
 
+  Future<void> _invite(BuildContext context, WidgetRef ref) async {
+    final ids = await showFriendPicker(
+      context,
+      title: 'Invitar a «${parche.name}»',
+    );
+    if (ids == null || ids.isEmpty || !context.mounted) return;
+    final actions = ref.read(parcheActionsProvider);
+    var sent = 0;
+    for (final id in ids) {
+      final result = await actions.invite(parche.id, id);
+      if (result.isSuccess) sent++;
+    }
+    if (!context.mounted) return;
+    showAppSnackBar(context, 'Invitaciones enviadas: $sent/${ids.length} 💌');
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final userId = ref.watch(authControllerProvider).session?.userId ?? '';
+    final isCreator = parche.isCreator(userId);
     final slotsRatio = parche.maximumQuota == 0
         ? 0.0
         : parche.memberCount / parche.maximumQuota;
 
     final (categoryIcon, categoryColor) =
-        categoryStyle(parche.category, scheme);
+        AppCategoryStyles.of(parche.category);
 
     return BouncyTap(
       onTap: () => context.push(
@@ -232,6 +290,22 @@ class ParcheCard extends StatelessWidget {
                   if (parche.type == 'PRIVATE')
                     const Icon(Icons.lock_outline,
                         size: 18, color: Colors.white),
+                  // Creador: invitar amistades desde la card.
+                  if (isCreator) ...[
+                    const SizedBox(width: 8),
+                    BouncyTap(
+                      onTap: () => _invite(context, ref),
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.22),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.person_add_alt_1,
+                            size: 16, color: Colors.white),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

@@ -6,8 +6,10 @@ import '../../../../core/router/routes.dart';
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/animations.dart';
+import '../../../../core/theme/app_assets.dart';
 import '../../../../core/widgets/async_value_view.dart';
 import '../../../../core/widgets/empty_state.dart';
+import '../../../../core/widgets/mascot.dart';
 import '../../../auth/presentation/widgets/auth_layout.dart'
     show showAppSnackBar;
 import '../../../profile/presentation/widgets/profile_avatar.dart';
@@ -21,13 +23,14 @@ class MatchesScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Column(
         children: [
           const TabBar(
             tabs: [
               Tab(text: 'Recibidas'),
               Tab(text: 'Enviadas'),
+              Tab(text: 'Amistades'),
             ],
           ),
           Expanded(
@@ -35,6 +38,7 @@ class MatchesScreen extends ConsumerWidget {
               children: [
                 _ReceivedTab(),
                 _SentTab(),
+                _FriendsTab(),
               ],
             ),
           ),
@@ -133,6 +137,130 @@ class _SentTab extends ConsumerWidget {
   }
 }
 
+/// Amistades: conexiones aceptadas con acciones de gestión.
+class _FriendsTab extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final friends = ref.watch(friendsProvider);
+    return AsyncValueView<List<MatchWithProfile>>(
+      value: friends,
+      onRetry: () => ref.invalidate(friendsProvider),
+      data: (items) {
+        if (items.isEmpty) {
+          return const MascotEmptyState(
+            asset: AppAssets.stickerHello,
+            message: 'Aún no tienes amistades.\nAcepta solicitudes o '
+                'conecta en Descubrir.',
+          );
+        }
+        return _MatchList(
+          items: items,
+          trailingBuilder: (context, item) => PopupMenuButton<String>(
+            tooltip: 'Opciones',
+            onSelected: (action) => _handle(context, ref, item, action),
+            itemBuilder: (_) => const [
+              PopupMenuItem(
+                value: 'block',
+                child: Row(children: [
+                  Icon(Icons.block, size: 20),
+                  SizedBox(width: 8),
+                  Text('Bloquear'),
+                ]),
+              ),
+              PopupMenuItem(
+                value: 'report',
+                child: Row(children: [
+                  Icon(Icons.flag_outlined, size: 20),
+                  SizedBox(width: 8),
+                  Text('Reportar'),
+                ]),
+              ),
+              PopupMenuItem(
+                value: 'remove',
+                child: Row(children: [
+                  Icon(Icons.person_remove_outlined, size: 20),
+                  SizedBox(width: 8),
+                  Text('Eliminar amistad'),
+                ]),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _handle(
+    BuildContext context,
+    WidgetRef ref,
+    MatchWithProfile item,
+    String action,
+  ) async {
+    final name = item.profile.name;
+    final (title, body, confirmLabel) = switch (action) {
+      'block' => (
+          'Bloquear a $name',
+          'No verás más su perfil ni recibirás mensajes.',
+          'Bloquear'
+        ),
+      'report' => (
+          'Reportar a $name',
+          'Se enviará el reporte al equipo de convivencia.',
+          'Reportar'
+        ),
+      _ => (
+          'Eliminar amistad',
+          'Dejarán de estar conectados. Esta acción se puede rehacer '
+              'con un nuevo match.',
+          'Eliminar'
+        ),
+    };
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(title),
+        content: Text(body),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(confirmLabel),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+
+    if (action == 'remove') {
+      // Reutiliza el endpoint real de respuesta: pasa el match a REJECTED.
+      final result = await ref
+          .read(matchActionsProvider)
+          .respond(item.match.id, MatchStatus.rejected);
+      if (!context.mounted) return;
+      result.when(
+        success: (_) {
+          ref.invalidate(friendsProvider);
+          showAppSnackBar(context, 'Amistad con $name eliminada.');
+        },
+        error: (failure) => showAppSnackBar(context, failure.message),
+      );
+      return;
+    }
+
+    // TODO(backend): matching-service aún no expone bloquear/reportar.
+    showAppSnackBar(
+      context,
+      action == 'block'
+          ? '$name bloqueado en este dispositivo. Pendiente en servidor.'
+          : 'Reporte de $name registrado. Pendiente en servidor.',
+    );
+  }
+}
+
 class _MatchList extends StatelessWidget {
   const _MatchList({required this.items, required this.trailingBuilder});
 
@@ -142,7 +270,7 @@ class _MatchList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       itemCount: items.length,
       itemBuilder: (context, index) {
         final item = items[index];

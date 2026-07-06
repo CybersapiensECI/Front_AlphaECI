@@ -93,6 +93,28 @@ abstract final class AppGlass {
   static const blurSigma = 16.0;
 }
 
+/// Acentos por categoría de parche/publicación.
+/// Extensión funcional de la paleta (solo headers, banners y chips de
+/// categoría): la paleta oficial base NO cambia. Colores mid-tone que
+/// funcionan sobre claro y oscuro con texto blanco.
+abstract final class AppCategoryStyles {
+  static const _fallback = (Icons.celebration_outlined, Color(0xFF3E6FA5));
+
+  static const Map<String, (IconData, Color)> _styles = {
+    'DEPORTE': (Icons.sports_soccer, Color(0xFF2FA36F)),
+    'ESTUDIO': (Icons.menu_book_outlined, Color(0xFF3E6FA5)),
+    'JUEGOS': (Icons.sports_esports_outlined, Color(0xFF7C5CD6)),
+    'CULTURA': (Icons.theater_comedy_outlined, Color(0xFFE08A3C)),
+    'COMIDA': (Icons.restaurant_outlined, Color(0xFFD95E5E)),
+    // Categorías de eventos universitarios.
+    'TECH': (Icons.memory_outlined, Color(0xFF5D95D1)),
+    'BIENESTAR': (Icons.spa_outlined, Color(0xFF2F9E9E)),
+  };
+
+  static (IconData, Color) of(String? category) =>
+      _styles[category?.toUpperCase()] ?? _fallback;
+}
+
 abstract final class AppShadows {
   /// Sombra suave para tarjetas flotantes.
   static List<BoxShadow> soft(BuildContext context) => [

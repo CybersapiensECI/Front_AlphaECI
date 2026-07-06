@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/widgets/glass_card.dart';
 import '../../../../core/widgets/gradient_scaffold.dart';
+import '../../../../core/widgets/mascot.dart';
 
 /// Layout premium para pantallas de autenticación:
 /// fondo con blobs de marca + tarjeta glass centrada + logo con gradiente.
@@ -35,22 +36,10 @@ class AuthLayout extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Logo con gradiente de marca.
-                    Hero(
+                    // Logo oficial (lobo + escudo).
+                    const Hero(
                       tag: 'app-logo',
-                      child: Container(
-                        width: 72,
-                        height: 72,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: AppGradients.of(context),
-                          boxShadow: AppShadows.glow(
-                              theme.colorScheme.primary),
-                        ),
-                        child: const Icon(Icons.hub_outlined,
-                            size: 36, color: Colors.white),
-                      ),
+                      child: BrandLogo(size: 84),
                     ),
                     const SizedBox(height: AppSpacing.md),
                     // Título con gradiente.

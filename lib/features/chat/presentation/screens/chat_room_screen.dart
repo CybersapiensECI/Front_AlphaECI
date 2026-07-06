@@ -28,6 +28,14 @@ class ChatRoomScreen extends ConsumerStatefulWidget {
 class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
   final _input = TextEditingController();
   final _scroll = ScrollController();
+  bool _showEmojis = false;
+
+  /// Emojis rápidos del contexto universitario/social.
+  static const _quickEmojis = [
+    '😀', '😂', '😍', '🔥', '🎉', '👍', '🙌', '💙', '😅', '😎',
+    '🤝', '⚽', '🎮', '📚', '🍕', '☕', '🥳', '😢', '😮', '💪',
+    '✨', '🤓', '🙏', '🫶',
+  ];
 
   String get _roomId => widget.conversation.connection.chatRoomId;
 
@@ -116,38 +124,92 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
                   child: GlassCard(
-                    padding: const EdgeInsets.fromLTRB(16, 4, 8, 4),
-                    child: Row(
+                    padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _input,
-                            decoration: const InputDecoration(
-                              hintText: 'Escribe un mensaje…',
-                              filled: false,
-                              border: InputBorder.none,
-                              enabledBorder: InputBorder.none,
-                              focusedBorder: InputBorder.none,
-                            ),
-                            textInputAction: TextInputAction.send,
-                            onSubmitted: (_) => _send(),
-                          ),
+                        // Barra de emojis rápidos (toggle).
+                        AnimatedSize(
+                          duration: AppDurations.base,
+                          curve: AppCurves.enter,
+                          child: !_showEmojis
+                              ? const SizedBox(width: double.infinity)
+                              : SizedBox(
+                                  height: 44,
+                                  child: ListView.builder(
+                                    scrollDirection: Axis.horizontal,
+                                    itemCount: _quickEmojis.length,
+                                    itemBuilder: (context, i) => BouncyTap(
+                                      onTap: () {
+                                        _input.text += _quickEmojis[i];
+                                        _input.selection =
+                                            TextSelection.collapsed(
+                                          offset: _input.text.length,
+                                        );
+                                      },
+                                      child: Padding(
+                                        padding: const EdgeInsets
+                                            .symmetric(horizontal: 6),
+                                        child: Center(
+                                          child: Text(
+                                            _quickEmojis[i],
+                                            style: const TextStyle(
+                                                fontSize: 24),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
                         ),
-                        const SizedBox(width: 8),
-                        BouncyTap(
-                          onTap: _send,
-                          child: Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: AppGradients.buttonOf(context),
-                              boxShadow: AppShadows.glow(
-                                  Theme.of(context).colorScheme.primary),
+                        Row(
+                          children: [
+                            IconButton(
+                              tooltip: 'Emojis',
+                              onPressed: () => setState(
+                                  () => _showEmojis = !_showEmojis),
+                              icon: Icon(
+                                _showEmojis
+                                    ? Icons.keyboard_alt_outlined
+                                    : Icons.emoji_emotions_outlined,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
+                              ),
                             ),
-                            child: const Icon(Icons.send,
-                                color: Colors.white, size: 20),
-                          ),
+                            Expanded(
+                              child: TextField(
+                                controller: _input,
+                                decoration: const InputDecoration(
+                                  hintText: 'Escribe un mensaje…',
+                                  filled: false,
+                                  border: InputBorder.none,
+                                  enabledBorder: InputBorder.none,
+                                  focusedBorder: InputBorder.none,
+                                ),
+                                textInputAction: TextInputAction.send,
+                                onSubmitted: (_) => _send(),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            BouncyTap(
+                              onTap: _send,
+                              child: Container(
+                                width: 44,
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: AppGradients.buttonOf(context),
+                                  boxShadow: AppShadows.glow(
+                                      Theme.of(context)
+                                          .colorScheme
+                                          .primary),
+                                ),
+                                child: const Icon(Icons.send,
+                                    color: Colors.white, size: 20),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -160,6 +222,14 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
       ),
     );
   }
+}
+
+/// true si el texto son solo emojis (hasta 10) — se renderizan grandes.
+bool _isEmojiOnly(String text) {
+  final stripped = text.replaceAll(RegExp(r'\s'), '');
+  if (stripped.isEmpty || stripped.runes.length > 10) return false;
+  // Sin caracteres alfanuméricos ni puntuación ASCII: lo tratamos como emoji.
+  return !RegExp(r'[\x20-\x7E]').hasMatch(stripped);
 }
 
 class _MessageBubble extends StatelessWidget {
@@ -175,6 +245,9 @@ class _MessageBubble extends StatelessWidget {
         ? DateFormat('HH:mm').format(message.sentAt!)
         : '';
 
+    // Mensajes de solo emojis: grandes y sin burbuja (estilo social).
+    final emojiOnly = _isEmojiOnly(message.content);
+
     return FadeSlideIn(
       offset: Offset(isMine ? 0.1 : -0.1, 0),
       child: Align(
@@ -183,7 +256,9 @@ class _MessageBubble extends StatelessWidget {
           margin: const EdgeInsets.only(bottom: 8),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           constraints: const BoxConstraints(maxWidth: 320),
-          decoration: BoxDecoration(
+          decoration: emojiOnly
+              ? null
+              : BoxDecoration(
             gradient: isMine ? AppGradients.buttonOf(context) : null,
             color: isMine ? null : scheme.surface,
             borderRadius: BorderRadius.only(
@@ -208,7 +283,7 @@ class _MessageBubble extends StatelessWidget {
                 message.content,
                 style: TextStyle(
                   color: isMine ? Colors.white : scheme.onSurface,
-                  fontSize: 15,
+                  fontSize: emojiOnly ? 34 : 15,
                 ),
               ),
               if (time.isNotEmpty)
@@ -216,7 +291,7 @@ class _MessageBubble extends StatelessWidget {
                   time,
                   style: TextStyle(
                     fontSize: 10,
-                    color: isMine
+                    color: !emojiOnly && isMine
                         ? Colors.white.withValues(alpha: 0.7)
                         : scheme.onSurfaceVariant,
                   ),
