@@ -5,6 +5,7 @@ import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/animations.dart';
 import '../../../../core/widgets/async_value_view.dart';
 import '../../../../core/widgets/empty_state.dart';
+import '../../../../core/widgets/gradient_scaffold.dart';
 import '../../domain/entities/wellbeing.dart';
 import '../providers/wellbeing_provider.dart';
 
@@ -23,7 +24,7 @@ class WellbeingScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
 
-    return Scaffold(
+    return GradientScaffold(
       appBar: AppBar(title: const Text('Bienestar')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),

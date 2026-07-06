@@ -7,6 +7,7 @@ import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/animations.dart';
 import '../../../../core/widgets/async_value_view.dart';
 import '../../../../core/widgets/empty_state.dart';
+import '../../../../core/widgets/gradient_scaffold.dart';
 import '../../../../core/widgets/loading_skeleton.dart';
 import '../../../profile/presentation/widgets/profile_avatar.dart';
 import '../providers/chat_provider.dart';
@@ -19,7 +20,7 @@ class ChatsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final conversations = ref.watch(conversationsProvider);
 
-    return Scaffold(
+    return GradientScaffold(
       appBar: AppBar(title: const Text('Chats')),
       body: AsyncValueView<List<ChatConversation>>(
         value: conversations,

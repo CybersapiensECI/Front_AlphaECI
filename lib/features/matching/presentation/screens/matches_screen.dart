@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/routes.dart';
+import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/animations.dart';
 import '../../../../core/widgets/async_value_view.dart';
@@ -156,15 +157,40 @@ class _MatchList extends StatelessWidget {
                 child: ListTile(
                   contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16, vertical: 8),
-                  leading: ProfileAvatar(
-                    name: item.profile.name,
-                    photoUrl: item.profile.photoUrl,
-                    radius: 24,
+                  leading: Container(
+                    padding: const EdgeInsets.all(2.5),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: AppGradients.of(context),
+                    ),
+                    child: ProfileAvatar(
+                      name: item.profile.name,
+                      photoUrl: item.profile.photoUrl,
+                      radius: 22,
+                    ),
                   ),
                   title: Text(item.profile.name),
                   subtitle: item.match.score != null
-                      ? Text(
-                          'Afinidad ${(item.match.score! * 100).round()}%')
+                      ? Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: AnimatedProgressBar(
+                                  value:
+                                      item.match.score!.clamp(0.0, 1.0),
+                                  height: 5,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                '${(item.match.score! * 100).round()}%',
+                                style:
+                                    Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
+                        )
                       : null,
                   trailing: trailingBuilder(context, item),
                   onTap: () => context.push(

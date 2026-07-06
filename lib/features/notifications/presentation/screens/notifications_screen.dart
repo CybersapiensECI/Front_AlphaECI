@@ -6,6 +6,7 @@ import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/animations.dart';
 import '../../../../core/widgets/async_value_view.dart';
 import '../../../../core/widgets/empty_state.dart';
+import '../../../../core/widgets/gradient_scaffold.dart';
 import '../../domain/entities/app_notification.dart';
 import '../providers/notification_provider.dart';
 
@@ -17,7 +18,7 @@ class NotificationsScreen extends ConsumerWidget {
     final notifications = ref.watch(notificationsProvider);
     final scheme = Theme.of(context).colorScheme;
 
-    return Scaffold(
+    return GradientScaffold(
       appBar: AppBar(
         title: const Text('Notificaciones'),
         actions: [

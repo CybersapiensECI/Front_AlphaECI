@@ -7,6 +7,7 @@ import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
+import '../../../../core/widgets/gradient_scaffold.dart';
 import '../../../auth/presentation/widgets/auth_layout.dart'
     show showAppSnackBar;
 import '../providers/parche_provider.dart';
@@ -96,7 +97,7 @@ class _CreateParcheScreenState extends ConsumerState<CreateParcheScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Scaffold(
+    return GradientScaffold(
       appBar: AppBar(title: const Text('Crear parche')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/routes.dart';
+import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/widgets/adaptive_scaffold.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../events/presentation/screens/events_screen.dart';
@@ -62,7 +63,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       selectedIndex: _index,
       onDestinationSelected: (i) => setState(() => _index = i),
       appBar: AppBar(
-        title: Text(_index == 0 ? 'AlphaECI' : _destinations[_index].label),
+        title: _index == 0
+            // Wordmark de marca con gradiente en el feed.
+            ? ShaderMask(
+                shaderCallback: (bounds) =>
+                    AppGradients.of(context).createShader(bounds),
+                child: Text(
+                  'AlphaECI',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                      ),
+                ),
+              )
+            : Text(_destinations[_index].label),
         actions: [
           IconButton(
             tooltip: 'Chats',

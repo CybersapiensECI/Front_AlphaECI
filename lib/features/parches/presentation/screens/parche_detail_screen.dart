@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/animations.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/gradient_scaffold.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/presentation/widgets/auth_layout.dart'
     show showAppSnackBar;
@@ -116,7 +117,7 @@ class _ParcheDetailScreenState extends ConsumerState<ParcheDetailScreen> {
         session != null && memberList.any((m) => m.studentId == session.userId);
     final isFull = memberList.length >= parche.maximumQuota;
 
-    return Scaffold(
+    return GradientScaffold(
       appBar: AppBar(title: Text(parche.name)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),

@@ -7,6 +7,7 @@ import '../../../../core/utils/validators.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/async_value_view.dart';
+import '../../../../core/widgets/gradient_scaffold.dart';
 import '../../../auth/presentation/widgets/auth_layout.dart' show showAppSnackBar;
 import '../../domain/entities/profile.dart';
 import '../providers/profile_provider.dart';
@@ -91,7 +92,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     final catalog = ref.watch(tagCatalogProvider);
     final theme = Theme.of(context);
 
-    return Scaffold(
+    return GradientScaffold(
       appBar: AppBar(title: const Text('Editar perfil')),
       body: AsyncValueView<UserProfile>(
         value: profile,

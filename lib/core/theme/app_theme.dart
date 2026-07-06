@@ -140,6 +140,50 @@ abstract final class AppTheme {
         ),
       ),
       dividerTheme: DividerThemeData(color: colorScheme.outline, thickness: 1),
+      tabBarTheme: TabBarThemeData(
+        labelColor: colorScheme.primary,
+        unselectedLabelColor: colorScheme.onSurfaceVariant,
+        labelStyle: textTheme.labelLarge,
+        unselectedLabelStyle: textTheme.labelLarge,
+        indicatorSize: TabBarIndicatorSize.label,
+        dividerColor: colorScheme.outline.withValues(alpha: 0.25),
+        indicator: UnderlineTabIndicator(
+          borderRadius: BorderRadius.circular(2),
+          borderSide: BorderSide(width: 3, color: colorScheme.tertiary),
+        ),
+      ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
+        elevation: 4,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+        ),
+        extendedTextStyle: textTheme.labelLarge,
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: colorScheme.surface,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: BorderSide(
+            color: colorScheme.outline.withValues(alpha: 0.18),
+          ),
+        ),
+      ),
+      popupMenuTheme: PopupMenuThemeData(
+        color: colorScheme.surface,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: BorderSide(
+            color: colorScheme.outline.withValues(alpha: 0.18),
+          ),
+        ),
+      ),
+      progressIndicatorTheme: ProgressIndicatorThemeData(
+        color: colorScheme.tertiary,
+      ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: colorScheme.surface,
         indicatorColor: colorScheme.tertiary.withValues(alpha: 0.25),

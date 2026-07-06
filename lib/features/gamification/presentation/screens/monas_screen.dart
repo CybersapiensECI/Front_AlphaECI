@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/animations.dart';
 import '../../../../core/widgets/async_value_view.dart';
+import '../../../../core/widgets/gradient_scaffold.dart';
 import '../../domain/entities/mona.dart';
 import '../providers/gamification_provider.dart';
 
@@ -16,7 +17,7 @@ class MonasScreen extends ConsumerWidget {
     final monas = ref.watch(myMonasProvider);
     final theme = Theme.of(context);
 
-    return Scaffold(
+    return GradientScaffold(
       appBar: AppBar(title: const Text('Mis Monas')),
       body: AsyncValueView<UserMonas>(
         value: monas,

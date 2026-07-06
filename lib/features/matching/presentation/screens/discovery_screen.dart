@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/widgets/animations.dart';
+import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/async_value_view.dart';
 import '../../../../core/widgets/empty_state.dart';
+import '../../../../core/widgets/glass_card.dart';
 import '../../../auth/presentation/widgets/auth_layout.dart'
     show showAppSnackBar;
 import '../../../profile/presentation/widgets/profile_avatar.dart';
@@ -321,28 +323,61 @@ class _MatchOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Center(
-      child: Card(
-        margin: const EdgeInsets.all(32),
+      child: Material(
+        type: MaterialType.transparency,
         child: Padding(
           padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('🎉', style: theme.textTheme.displaySmall),
-              const SizedBox(height: 8),
-              Text('¡Conectaron!', style: theme.textTheme.headlineMedium),
-              const SizedBox(height: 8),
-              Text(
-                'Tú y ${candidate.profile.name} quieren conectar.',
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodyLarge,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 380),
+            child: GlassCard(
+              radius: AppRadii.xl,
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: AppGradients.of(context),
+                        boxShadow:
+                            AppShadows.glow(theme.colorScheme.tertiary),
+                      ),
+                      child: ProfileAvatar(
+                        name: candidate.profile.name,
+                        photoUrl: candidate.profile.photoUrl,
+                        radius: 44,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ShaderMask(
+                    shaderCallback: (bounds) =>
+                        AppGradients.of(context).createShader(bounds),
+                    child: Text(
+                      '¡Conectaron!',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.headlineMedium
+                          ?.copyWith(color: Colors.white),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Tú y ${candidate.profile.name} quieren conectar.',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyLarge,
+                  ),
+                  const SizedBox(height: 24),
+                  AppButton(
+                    label: '¡Genial!',
+                    icon: Icons.celebration_outlined,
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
               ),
-              const SizedBox(height: 24),
-              FilledButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('¡Genial!'),
-              ),
-            ],
+            ),
           ),
         ),
       ),

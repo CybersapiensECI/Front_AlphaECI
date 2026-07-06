@@ -6,6 +6,7 @@ import '../../../../core/network/api_client.dart';
 import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/animations.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/gradient_scaffold.dart';
 import '../../../auth/presentation/widgets/auth_layout.dart'
     show showAppSnackBar;
 import '../../data/zone_repository.dart';
@@ -75,7 +76,7 @@ class _ZoneScreenState extends ConsumerState<ZoneScreen> {
       }
     });
 
-    return Scaffold(
+    return GradientScaffold(
       appBar: AppBar(title: const Text('Mi zona del campus')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/animations.dart';
+import '../../../../core/widgets/gradient_scaffold.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/presentation/widgets/auth_layout.dart'
     show showAppSnackBar;
@@ -48,7 +49,7 @@ class _PublicProfileScreenState extends ConsumerState<PublicProfileScreen> {
     final theme = Theme.of(context);
     final summary = widget.summary;
 
-    return Scaffold(
+    return GradientScaffold(
       appBar: AppBar(title: Text(summary.name)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),

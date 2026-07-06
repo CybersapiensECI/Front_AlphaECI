@@ -7,6 +7,7 @@ import '../../../../core/network/api_client.dart';
 import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/animations.dart';
 import '../../../../core/widgets/async_value_view.dart';
+import '../../../../core/widgets/gradient_scaffold.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../data/stats_repository.dart';
 import '../../domain/entities/personal_stats.dart';
@@ -34,7 +35,7 @@ class DashboardScreen extends ConsumerWidget {
     final stats = ref.watch(personalStatsProvider);
     final theme = Theme.of(context);
 
-    return Scaffold(
+    return GradientScaffold(
       appBar: AppBar(title: const Text('Mi Dashboard')),
       body: AsyncValueView<PersonalStats>(
         value: stats,

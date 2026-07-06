@@ -6,6 +6,8 @@ import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/animations.dart';
 import '../../../../core/widgets/async_value_view.dart';
+import '../../../../core/widgets/glass_card.dart';
+import '../../../../core/widgets/gradient_scaffold.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/presentation/widgets/auth_layout.dart'
     show showAppSnackBar;
@@ -67,7 +69,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
     // Auto-scroll cuando llegan mensajes.
     ref.listen(chatRoomProvider(_roomId), (_, _) => _scrollToBottom());
 
-    return Scaffold(
+    return GradientScaffold(
       appBar: AppBar(
         title: Row(
           children: [
@@ -113,30 +115,42 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
               SafeArea(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _input,
-                          decoration: const InputDecoration(
-                            hintText: 'Escribe un mensaje…',
+                  child: GlassCard(
+                    padding: const EdgeInsets.fromLTRB(16, 4, 8, 4),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _input,
+                            decoration: const InputDecoration(
+                              hintText: 'Escribe un mensaje…',
+                              filled: false,
+                              border: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                            ),
+                            textInputAction: TextInputAction.send,
+                            onSubmitted: (_) => _send(),
                           ),
-                          textInputAction: TextInputAction.send,
-                          onSubmitted: (_) => _send(),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      BouncyTap(
-                        onTap: _send,
-                        child: CircleAvatar(
-                          radius: 24,
-                          backgroundColor:
-                              Theme.of(context).colorScheme.primary,
-                          child: const Icon(Icons.send,
-                              color: Colors.white, size: 20),
+                        const SizedBox(width: 8),
+                        BouncyTap(
+                          onTap: _send,
+                          child: Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: AppGradients.buttonOf(context),
+                              boxShadow: AppShadows.glow(
+                                  Theme.of(context).colorScheme.primary),
+                            ),
+                            child: const Icon(Icons.send,
+                                color: Colors.white, size: 20),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
