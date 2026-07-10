@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "63766514477",
+    "project_id": "alphaeci",
+    "storage_bucket": "alphaeci.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:63766514477:android:5bd6ae9c4f3895caec21a4",
+        "android_client_info": {
+          "package_name": "com.alphaeci.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBJdnjAatWtFgE376x7m_ELUkXmHA0kvu0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:63766514477:android:fec1309d49bbae61ec21a4",
+        "android_client_info": {
+          "package_name": "com.example.alphafront"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBJdnjAatWtFgE376x7m_ELUkXmHA0kvu0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
