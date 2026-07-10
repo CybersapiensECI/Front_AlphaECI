@@ -119,13 +119,18 @@ class ParcheActions {
     return result;
   }
 
-  Future<Result<String>> createPost(String parcheId, String text) async {
+  Future<Result<String>> createPost(
+    String parcheId,
+    String text, {
+    String? photoUrl,
+  }) async {
     final userId = _userId;
     if (userId == null) return const Error(AuthFailure());
     final result = await _ref.read(parcheRepositoryProvider).createPost(
           parcheId: parcheId,
           authorId: userId,
           text: text,
+          photoUrl: photoUrl,
         );
     if (result.isSuccess) _ref.invalidate(parchePostsProvider(parcheId));
     return result;

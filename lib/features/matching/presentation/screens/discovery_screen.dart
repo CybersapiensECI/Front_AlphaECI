@@ -157,6 +157,11 @@ class _CandidateCard extends StatelessWidget {
 
     return Card(
       clipBehavior: Clip.antiAlias,
+      // Opaca a propósito: en el mazo apilado, una carta translúcida
+      // dejaría ver las de atrás y el fondo, impidiendo leer la info.
+      color: scheme.surface,
+      elevation: 10,
+      shadowColor: Colors.black.withValues(alpha: 0.28),
       child: SizedBox(
         width: 400,
         child: Column(

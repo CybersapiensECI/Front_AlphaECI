@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'app_colors.dart';
 import 'app_typography.dart';
+import 'design_tokens.dart';
 
 /// Temas Material 3 con la paleta oficial AlphaECI.
 /// ColorScheme explícito (la marca fija cada rol; fromSeed alteraría los tonos).
@@ -59,6 +60,12 @@ abstract final class AppTheme {
     required Color secondaryGrey,
   }) {
     final textTheme = AppTypography.textTheme(textPrimary, secondaryGrey);
+    final isDark = colorScheme.brightness == Brightness.dark;
+    // Superficies glass derivadas (translúcidas): los blobs del fondo se
+    // filtran a través y dan el efecto frosted, sin blur por-widget (barato).
+    final glassFill = AppGlass.fillFor(colorScheme, isDark);
+    final sheetFill = AppGlass.sheetFillFor(colorScheme, isDark);
+    final glassBorder = AppGlass.borderFor(isDark);
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
@@ -81,24 +88,25 @@ abstract final class AppTheme {
         centerTitle: false,
         titleTextStyle: textTheme.titleLarge,
       ),
+      // Tarjetas frosted: relleno translúcido + sheen de borde claro.
       cardTheme: CardThemeData(
-        color: colorScheme.surface,
+        color: glassFill,
         elevation: 0,
         shadowColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide(
-            color: colorScheme.outline.withValues(alpha: 0.18),
-          ),
+          borderRadius: BorderRadius.circular(AppRadii.lg),
+          side: BorderSide(color: glassBorder),
         ),
       ),
       chipTheme: ChipThemeData(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
-          side: BorderSide(color: colorScheme.outline.withValues(alpha: 0.3)),
+          side: BorderSide(color: glassBorder),
         ),
-        backgroundColor: colorScheme.surface,
-        selectedColor: colorScheme.tertiary.withValues(alpha: 0.25),
+        backgroundColor: glassFill,
+        selectedColor: colorScheme.tertiary.withValues(alpha: 0.28),
         labelStyle: textTheme.bodyMedium,
       ),
       filledButtonTheme: FilledButtonThemeData(
@@ -117,25 +125,26 @@ abstract final class AppTheme {
           foregroundColor: colorScheme.secondary,
         ),
       ),
+      // Inputs frosted: relleno translúcido + bordes suaves de vidrio.
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: colorScheme.surface,
+        fillColor: glassFill,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: colorScheme.outline),
+          borderRadius: BorderRadius.circular(AppRadii.md),
+          borderSide: BorderSide(color: glassBorder),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: colorScheme.outline),
+          borderRadius: BorderRadius.circular(AppRadii.md),
+          borderSide: BorderSide(color: glassBorder),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: colorScheme.secondary, width: 2),
+          borderRadius: BorderRadius.circular(AppRadii.md),
+          borderSide: BorderSide(color: colorScheme.tertiary, width: 2),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadii.md),
           borderSide: BorderSide(color: colorScheme.error),
         ),
       ),
@@ -161,36 +170,48 @@ abstract final class AppTheme {
         ),
         extendedTextStyle: textTheme.labelLarge,
       ),
+      // Superficies flotantes frosted (más opacas para legibilidad).
       dialogTheme: DialogThemeData(
-        backgroundColor: colorScheme.surface,
+        backgroundColor: sheetFill,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-          side: BorderSide(
-            color: colorScheme.outline.withValues(alpha: 0.18),
-          ),
+          borderRadius: BorderRadius.circular(AppRadii.xl),
+          side: BorderSide(color: glassBorder),
         ),
       ),
       popupMenuTheme: PopupMenuThemeData(
-        color: colorScheme.surface,
+        color: sheetFill,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-          side: BorderSide(
-            color: colorScheme.outline.withValues(alpha: 0.18),
-          ),
+          borderRadius: BorderRadius.circular(AppRadii.md),
+          side: BorderSide(color: glassBorder),
+        ),
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: sheetFill,
+        surfaceTintColor: Colors.transparent,
+        modalBackgroundColor: sheetFill,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadii.xl)),
+        ),
+      ),
+      menuTheme: MenuThemeData(
+        style: MenuStyle(
+          backgroundColor: WidgetStatePropertyAll(sheetFill),
+          surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
         ),
       ),
       progressIndicatorTheme: ProgressIndicatorThemeData(
         color: colorScheme.tertiary,
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: colorScheme.surface,
-        indicatorColor: colorScheme.tertiary.withValues(alpha: 0.25),
+        backgroundColor: glassFill,
+        surfaceTintColor: Colors.transparent,
+        indicatorColor: colorScheme.tertiary.withValues(alpha: 0.28),
       ),
       navigationRailTheme: NavigationRailThemeData(
-        backgroundColor: colorScheme.surface,
-        indicatorColor: colorScheme.tertiary.withValues(alpha: 0.25),
+        backgroundColor: glassFill,
+        indicatorColor: colorScheme.tertiary.withValues(alpha: 0.28),
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,

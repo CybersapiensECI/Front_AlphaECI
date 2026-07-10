@@ -5,10 +5,11 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/router/routes.dart';
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/widgets/animations.dart';
-import '../../../../core/widgets/text_input_sheet.dart';
 import '../../../auth/presentation/widgets/auth_layout.dart'
     show showAppSnackBar;
+import '../../../parches/presentation/providers/comments_provider.dart';
 import '../../../parches/presentation/providers/parche_provider.dart';
+import '../../../parches/presentation/widgets/comments_sheet.dart';
 import '../../../profile/presentation/widgets/profile_avatar.dart';
 import '../providers/feed_provider.dart';
 
@@ -44,23 +45,12 @@ class PublicationCard extends ConsumerWidget {
     }
   }
 
-  Future<void> _comment(BuildContext context, WidgetRef ref) async {
-    final text = await showTextInputSheet(
-      context,
-      title: 'Comentar',
-      hint: 'Tu comentario…',
-      submitLabel: 'Comentar',
-    );
-    if (text == null || text.isEmpty || !context.mounted) return;
-    final result = await ref
-        .read(parcheActionsProvider)
-        .comment(publication.parche.id, publication.post.id, text);
-    if (!context.mounted) return;
-    result.when(
-      success: (message) => showAppSnackBar(context, message),
-      error: (failure) => showAppSnackBar(context, failure.message),
-    );
-  }
+  /// Abre el sheet de comentarios (lista + campo para comentar).
+  void _comments(BuildContext context) => showCommentsSheet(
+        context,
+        parcheId: publication.parche.id,
+        postId: publication.post.id,
+      );
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -71,6 +61,9 @@ class PublicationCard extends ConsumerWidget {
     final (categoryIcon, categoryColor) =
         AppCategoryStyles.of(parche.category);
     final liked = ref.watch(likedPostsProvider).contains(post.id);
+    final commentCount = ref.watch(
+      postCommentsProvider.select((map) => map[post.id]?.length ?? 0),
+    );
 
     return Card(
       margin: const EdgeInsets.only(bottom: 14),
@@ -223,13 +216,26 @@ class PublicationCard extends ConsumerWidget {
                   ),
                 ),
                 BouncyTap(
-                  onTap: () => _comment(context, ref),
+                  onTap: () => _comments(context),
                   child: Padding(
                     padding: const EdgeInsets.all(8),
-                    child: Icon(
-                      Icons.mode_comment_outlined,
-                      size: 20,
-                      color: theme.colorScheme.onSurfaceVariant,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.mode_comment_outlined,
+                          size: 20,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        // Contador de comentarios (sesión + demo).
+                        if (commentCount > 0) ...[
+                          const SizedBox(width: 4),
+                          Text(
+                            '$commentCount',
+                            style: theme.textTheme.bodySmall,
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                 ),

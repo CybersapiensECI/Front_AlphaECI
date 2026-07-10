@@ -8,7 +8,8 @@ import '../../../../core/widgets/app_button.dart';
 import '../../../../core/theme/app_assets.dart';
 import '../../../../core/widgets/gradient_scaffold.dart';
 import '../../../../core/widgets/mascot.dart';
-import '../../../../core/widgets/text_input_sheet.dart';
+import '../widgets/comments_sheet.dart';
+import '../widgets/post_composer_sheet.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/presentation/widgets/auth_layout.dart'
     show showAppSnackBar;
@@ -29,14 +30,7 @@ class ParcheDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _ParcheDetailScreenState extends ConsumerState<ParcheDetailScreen> {
-  final _post = TextEditingController();
   bool _joining = false;
-
-  @override
-  void dispose() {
-    _post.dispose();
-    super.dispose();
-  }
 
   Future<void> _join() async {
     setState(() => _joining = true);
@@ -58,32 +52,28 @@ class _ParcheDetailScreenState extends ConsumerState<ParcheDetailScreen> {
     if (failure != null) showAppSnackBar(context, failure.message);
   }
 
-  Future<void> _comment(String postId) async {
-    final text = await showTextInputSheet(
-      context,
-      title: 'Comentar',
-      hint: 'Tu comentario…',
-      submitLabel: 'Comentar',
-    );
-    if (text == null || text.isEmpty || !mounted) return;
-    final result = await ref
-        .read(parcheActionsProvider)
-        .comment(widget.parche.id, postId, text);
-    if (!mounted) return;
-    result.when(
-      success: (message) => showMascotSnackBar(context, message, AppAssets.stickerOk),
-      error: (failure) => showAppSnackBar(context, failure.message),
-    );
-  }
+  /// Comentarios estilo Instagram: lista + campo para comentar.
+  void _comment(String postId) => showCommentsSheet(
+        context,
+        parcheId: widget.parche.id,
+        postId: postId,
+      );
 
   Future<void> _publish() async {
-    final text = _post.text.trim();
-    if (text.isEmpty) return;
-    final result =
-        await ref.read(parcheActionsProvider).createPost(widget.parche.id, text);
+    final draft = await showPostComposerSheet(
+      context,
+      title: 'Publicar en ${widget.parche.name}',
+    );
+    if (draft == null || !mounted) return;
+    final result = await ref.read(parcheActionsProvider).createPost(
+          widget.parche.id,
+          draft.text,
+          photoUrl: draft.photoUrl,
+        );
     if (!mounted) return;
     result.when(
-      success: (_) => _post.clear(),
+      success: (_) => showMascotSnackBar(
+          context, '¡Publicado en el muro! 🎉', AppAssets.stickerOk),
       error: (failure) => showAppSnackBar(context, failure.message),
     );
   }
@@ -241,23 +231,43 @@ class _ParcheDetailScreenState extends ConsumerState<ParcheDetailScreen> {
                             style: theme.textTheme.titleMedium),
                         const SizedBox(height: 12),
                         if (isMember)
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextField(
-                                  controller: _post,
-                                  decoration: const InputDecoration(
-                                    hintText: '¿Qué está pasando?',
-                                  ),
-                                  onSubmitted: (_) => _publish(),
+                          // Composer: texto + foto (abre sheet completo).
+                          BouncyTap(
+                            onTap: _publish,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 12),
+                              decoration: BoxDecoration(
+                                color: scheme.tertiary
+                                    .withValues(alpha: 0.10),
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: scheme.outline
+                                      .withValues(alpha: 0.25),
                                 ),
                               ),
-                              const SizedBox(width: 8),
-                              IconButton.filled(
-                                icon: const Icon(Icons.send),
-                                onPressed: _publish,
+                              child: Row(
+                                children: [
+                                  Icon(Icons.edit_outlined,
+                                      size: 18, color: scheme.primary),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      '¿Qué está pasando? Texto o foto…',
+                                      style: theme.textTheme.bodyMedium
+                                          ?.copyWith(
+                                        color: scheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ),
+                                  Icon(
+                                    Icons.add_photo_alternate_outlined,
+                                    size: 20,
+                                    color: scheme.tertiary,
+                                  ),
+                                ],
                               ),
-                            ],
+                            ),
                           ),
                         const SizedBox(height: 12),
                         posts.when(
@@ -289,10 +299,37 @@ class _ParcheDetailScreenState extends ConsumerState<ParcheDetailScreen> {
                                           color: scheme.primary),
                                     ),
                                     title: Text(post.text ?? ''),
-                                    subtitle: post.createdAt != null
-                                        ? Text(DateFormat('d MMM · HH:mm')
-                                            .format(post.createdAt!))
-                                        : null,
+                                    subtitle: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        // Foto adjunta de la publicación.
+                                        if (post.photoUrl?.isNotEmpty ==
+                                            true)
+                                          Padding(
+                                            padding: const EdgeInsets
+                                                .only(top: 6, bottom: 4),
+                                            child: ClipRRect(
+                                              borderRadius:
+                                                  BorderRadius.circular(
+                                                      10),
+                                              child: Image.network(
+                                                post.photoUrl!,
+                                                height: 140,
+                                                width: double.infinity,
+                                                fit: BoxFit.cover,
+                                                errorBuilder:
+                                                    (_, _, _) =>
+                                                        const SizedBox
+                                                            .shrink(),
+                                              ),
+                                            ),
+                                          ),
+                                        if (post.createdAt != null)
+                                          Text(DateFormat('d MMM · HH:mm')
+                                              .format(post.createdAt!)),
+                                      ],
+                                    ),
                                     trailing: isMember
                                         ? Row(
                                             mainAxisSize: MainAxisSize.min,

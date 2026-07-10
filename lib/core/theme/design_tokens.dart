@@ -76,21 +76,44 @@ abstract final class AppGradients {
 
 abstract final class AppGlass {
   /// Relleno de tarjeta glass según brillo del tema.
-  static Color fill(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Theme.of(context).brightness == Brightness.dark
-        ? scheme.surface.withValues(alpha: 0.55)
-        : scheme.surface.withValues(alpha: 0.70);
-  }
+  static Color fill(BuildContext context) => fillFor(
+        Theme.of(context).colorScheme,
+        Theme.of(context).brightness == Brightness.dark,
+      );
 
-  /// Borde sutil.
-  static Color border(BuildContext context) {
-    return Theme.of(context).brightness == Brightness.dark
-        ? Colors.white.withValues(alpha: 0.10)
-        : Colors.white.withValues(alpha: 0.60);
-  }
+  /// Igual que [fill] pero sin context — para usar dentro del ThemeData.
+  static Color fillFor(ColorScheme scheme, bool isDark) => isDark
+      ? scheme.surface.withValues(alpha: 0.52)
+      : scheme.surface.withValues(alpha: 0.68);
 
-  static const blurSigma = 16.0;
+  /// Relleno más opaco para superficies flotantes sobre scrim oscuro
+  /// (diálogos, menús, bottom sheets): prioriza legibilidad.
+  static Color sheetFillFor(ColorScheme scheme, bool isDark) => isDark
+      ? scheme.surface.withValues(alpha: 0.82)
+      : scheme.surface.withValues(alpha: 0.86);
+
+  /// Borde sutil (sheen de vidrio).
+  static Color border(BuildContext context) => borderFor(
+        Theme.of(context).brightness == Brightness.dark,
+      );
+
+  static Color borderFor(bool isDark) => isDark
+      ? Colors.white.withValues(alpha: 0.12)
+      : Colors.white.withValues(alpha: 0.65);
+
+  /// Gradiente de brillo superior (reflejo de vidrio) para tarjetas grandes.
+  static LinearGradient sheen(bool isDark) => LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          Colors.white.withValues(alpha: isDark ? 0.06 : 0.22),
+          Colors.white.withValues(alpha: 0.0),
+        ],
+        stops: const [0.0, 0.6],
+      );
+
+  static const blurSigma = 18.0;
+  static const blurSigmaStrong = 26.0;
 }
 
 /// Acentos por categoría de parche/publicación.

@@ -10,13 +10,13 @@ import '../../../../core/widgets/glass_card.dart';
 import '../../../../core/widgets/mascot.dart';
 import '../../../../core/widgets/interest_chip.dart';
 import '../../../../core/widgets/loading_skeleton.dart';
-import '../../../../core/widgets/text_input_sheet.dart';
 import '../../../auth/presentation/widgets/auth_layout.dart'
     show showAppSnackBar;
 import '../../../parches/domain/entities/parche.dart';
 import '../../../parches/presentation/providers/parche_provider.dart';
 import '../../../parches/presentation/screens/parches_screen.dart'
     show kParcheCategories;
+import '../../../parches/presentation/widgets/post_composer_sheet.dart';
 import '../providers/feed_provider.dart';
 import '../widgets/publication_card.dart';
 
@@ -31,15 +31,16 @@ class FeedScreen extends ConsumerWidget {
     WidgetRef ref,
     Parche parche,
   ) async {
-    final text = await showTextInputSheet(
+    final draft = await showPostComposerSheet(
       context,
       title: 'Publicar en ${parche.name}',
-      hint: '¿Cómo va el parche? Comparte el momento…',
-      maxLines: 5,
     );
-    if (text == null || text.isEmpty || !context.mounted) return;
-    final result =
-        await ref.read(parcheActionsProvider).createPost(parche.id, text);
+    if (draft == null || !context.mounted) return;
+    final result = await ref.read(parcheActionsProvider).createPost(
+          parche.id,
+          draft.text,
+          photoUrl: draft.photoUrl,
+        );
     if (!context.mounted) return;
     result.when(
       success: (_) {

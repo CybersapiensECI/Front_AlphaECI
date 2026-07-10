@@ -85,6 +85,7 @@ class MockParcheRepository implements ParcheRepository {
         id: 'post2',
         authorId: 'u2',
         text: 'Ya reservé la cancha para el viernes 🔥 Nos vemos 4pm.',
+        photoUrl: 'https://picsum.photos/seed/eci-cancha/900/540',
         createdAt: DateTime.now().subtract(const Duration(hours: 5)),
       ),
       ParchePost(
@@ -115,6 +116,7 @@ class MockParcheRepository implements ParcheRepository {
         id: 'post5',
         authorId: 'u2',
         text: 'El plan de hoy pinta brutal 🎬🍿 ¿Quién más viene?',
+        photoUrl: 'https://picsum.photos/seed/eci-cine/900/540',
         createdAt: DateTime.now().subtract(const Duration(minutes: 40)),
       ),
     ],
