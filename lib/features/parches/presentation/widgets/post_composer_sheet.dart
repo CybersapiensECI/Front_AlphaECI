@@ -1,5 +1,11 @@
-import 'package:flutter/material.dart';
+import 'dart:typed_data';
 
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
+
+import '../../../../core/config/env.dart';
+import '../../../../core/storage/media_upload_service.dart';
 import '../../../../core/theme/design_tokens.dart';
 
 /// Borrador de publicación: texto + foto opcional.
@@ -10,10 +16,12 @@ class PostDraft {
   final String? photoUrl;
 }
 
-/// Bottom sheet para redactar una publicación con foto opcional.
-/// La foto va como URL: el backend guarda `photoUrl` en el post.
-/// TODO(backend): cuando exista servicio de storage para subir archivos,
-/// cambiar el campo URL por un picker de galería/cámara.
+/// Bottom sheet para redactar una publicación con foto opcional desde
+/// galería, cámara, o pegando una URL.
+/// Fotos de galería/cámara se suben a Firebase Storage (única pieza de
+/// la app sin backend propio: AlphaECI no tiene servicio de storage).
+/// Requiere `flutterfire configure` — ver lib/firebase_options.dart.
+/// En DEMO=true no sube nada real: usa una imagen de muestra pública.
 Future<PostDraft?> showPostComposerSheet(
   BuildContext context, {
   required String title,
@@ -31,20 +39,27 @@ Future<PostDraft?> showPostComposerSheet(
   );
 }
 
-class _PostComposerSheet extends StatefulWidget {
+class _PostComposerSheet extends ConsumerStatefulWidget {
   const _PostComposerSheet({required this.title});
 
   final String title;
 
   @override
-  State<_PostComposerSheet> createState() => _PostComposerSheetState();
+  ConsumerState<_PostComposerSheet> createState() =>
+      _PostComposerSheetState();
 }
 
-class _PostComposerSheetState extends State<_PostComposerSheet> {
+class _PostComposerSheetState extends ConsumerState<_PostComposerSheet> {
   final _text = TextEditingController();
-  final _photo = TextEditingController();
-  bool _showPhotoField = false;
+  final _photoUrlField = TextEditingController();
   bool _hasText = false;
+  bool _showUrlField = false;
+
+  // Foto elegida de galería/cámara (bytes: funciona igual en móvil/web).
+  Uint8List? _pickedBytes;
+  String _pickedExt = 'jpg';
+  bool _uploading = false;
+  String? _error;
 
   @override
   void initState() {
@@ -53,31 +68,103 @@ class _PostComposerSheetState extends State<_PostComposerSheet> {
       final has = _text.text.trim().isNotEmpty;
       if (has != _hasText) setState(() => _hasText = has);
     });
-    // Refresca la vista previa mientras se escribe la URL.
-    _photo.addListener(() => setState(() {}));
+    _photoUrlField.addListener(() => setState(() {}));
   }
 
   @override
   void dispose() {
     _text.dispose();
-    _photo.dispose();
+    _photoUrlField.dispose();
     super.dispose();
   }
 
-  void _submit() {
+  Future<void> _pick(ImageSource source) async {
+    final file = await ImagePicker().pickImage(
+      source: source,
+      maxWidth: 1920,
+      imageQuality: 85,
+    );
+    if (file == null) return;
+    final bytes = await file.readAsBytes();
+    final ext = _extensionOf(file.name);
+    setState(() {
+      _pickedBytes = bytes;
+      _pickedExt = ext;
+      _showUrlField = false;
+      _photoUrlField.clear();
+      _error = null;
+    });
+  }
+
+  String _extensionOf(String name) {
+    final dot = name.lastIndexOf('.');
+    if (dot == -1 || dot == name.length - 1) return 'jpg';
+    final ext = name.substring(dot + 1).toLowerCase();
+    return switch (ext) {
+      'png' || 'jpg' || 'jpeg' || 'webp' => ext,
+      _ => 'jpg',
+    };
+  }
+
+  void _removePhoto() => setState(() {
+        _pickedBytes = null;
+        _error = null;
+      });
+
+  Future<void> _submit() async {
     final text = _text.text.trim();
     if (text.isEmpty) return;
-    final photo = _photo.text.trim();
-    Navigator.of(context).pop(
-      PostDraft(text: text, photoUrl: photo.isEmpty ? null : photo),
-    );
+
+    // Pegaron una URL manual: usarla tal cual, sin subir nada.
+    final manualUrl = _photoUrlField.text.trim();
+    if (_pickedBytes == null && manualUrl.isNotEmpty) {
+      Navigator.of(context).pop(PostDraft(text: text, photoUrl: manualUrl));
+      return;
+    }
+
+    // Sin foto: publicación de solo texto, igual que siempre.
+    if (_pickedBytes == null) {
+      Navigator.of(context).pop(PostDraft(text: text));
+      return;
+    }
+
+    // Demo: no hay Firebase real que subir — usar una muestra pública.
+    if (Env.demoMode) {
+      final seed = DateTime.now().microsecondsSinceEpoch;
+      Navigator.of(context).pop(
+        PostDraft(
+          text: text,
+          photoUrl: 'https://picsum.photos/seed/demo-$seed/900/540',
+        ),
+      );
+      return;
+    }
+
+    // Subir a Firebase Storage y usar la URL pública resultante.
+    setState(() {
+      _uploading = true;
+      _error = null;
+    });
+    try {
+      final url = await ref
+          .read(mediaUploadServiceProvider)
+          .uploadPostImage(_pickedBytes!, ext: _pickedExt);
+      if (!mounted) return;
+      Navigator.of(context).pop(PostDraft(text: text, photoUrl: url));
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _uploading = false;
+        _error = 'No se pudo subir la foto. Intenta de nuevo.';
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final photoUrl = _photo.text.trim();
+    final manualUrl = _photoUrlField.text.trim();
 
     return Container(
       decoration: BoxDecoration(
@@ -119,31 +206,61 @@ class _PostComposerSheetState extends State<_PostComposerSheet> {
                   hintText: '¿Cómo va el parche? Comparte el momento…',
                 ),
               ),
-              // Campo de foto (URL) con vista previa.
-              if (_showPhotoField) ...[
+              // ── Vista previa de foto elegida (galería/cámara) ──
+              if (_pickedBytes != null) ...[
+                const SizedBox(height: 10),
+                Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(AppRadii.md),
+                      child: Image.memory(
+                        _pickedBytes!,
+                        height: 160,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    Positioned(
+                      top: 6,
+                      right: 6,
+                      child: _RemoveButton(onTap: _removePhoto),
+                    ),
+                  ],
+                ),
+                if (Env.demoMode) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    'Modo demo: se publicará con una imagen de muestra '
+                    'pública (sin backend de storage aún).',
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ],
+              ],
+              // ── URL manual (alternativa a galería/cámara) ──
+              if (_showUrlField && _pickedBytes == null) ...[
                 const SizedBox(height: 10),
                 TextField(
-                  controller: _photo,
+                  controller: _photoUrlField,
                   keyboardType: TextInputType.url,
                   decoration: InputDecoration(
                     hintText: 'https://… (URL de la foto)',
                     prefixIcon: const Icon(Icons.link, size: 20),
                     suffixIcon: IconButton(
-                      tooltip: 'Quitar foto',
+                      tooltip: 'Quitar',
                       icon: const Icon(Icons.close, size: 18),
                       onPressed: () => setState(() {
-                        _photo.clear();
-                        _showPhotoField = false;
+                        _photoUrlField.clear();
+                        _showUrlField = false;
                       }),
                     ),
                   ),
                 ),
-                if (photoUrl.isNotEmpty) ...[
+                if (manualUrl.isNotEmpty) ...[
                   const SizedBox(height: 10),
                   ClipRRect(
                     borderRadius: BorderRadius.circular(AppRadii.md),
                     child: Image.network(
-                      photoUrl,
+                      manualUrl,
                       height: 140,
                       width: double.infinity,
                       fit: BoxFit.cover,
@@ -160,21 +277,45 @@ class _PostComposerSheetState extends State<_PostComposerSheet> {
                   ),
                 ],
               ],
+              if (_error != null) ...[
+                const SizedBox(height: 8),
+                Text(_error!,
+                    style: TextStyle(color: scheme.error, fontSize: 12)),
+              ],
               const SizedBox(height: 12),
+              // ── Acciones para adjuntar foto ──
+              if (_pickedBytes == null)
+                Row(
+                  children: [
+                    IconButton.filledTonal(
+                      tooltip: 'Foto de galería',
+                      onPressed: () => _pick(ImageSource.gallery),
+                      icon: const Icon(Icons.photo_library_outlined),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton.filledTonal(
+                      tooltip: 'Tomar foto',
+                      onPressed: () => _pick(ImageSource.camera),
+                      icon: const Icon(Icons.photo_camera_outlined),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton.filledTonal(
+                      tooltip: 'Pegar URL de foto',
+                      isSelected: _showUrlField,
+                      onPressed: () =>
+                          setState(() => _showUrlField = !_showUrlField),
+                      icon: const Icon(Icons.link),
+                    ),
+                    const Spacer(),
+                  ],
+                ),
+              const SizedBox(height: 8),
               Row(
                 children: [
-                  // Adjuntar foto.
-                  IconButton.filledTonal(
-                    tooltip: 'Añadir foto',
-                    isSelected: _showPhotoField,
-                    onPressed: () =>
-                        setState(() => _showPhotoField = !_showPhotoField),
-                    icon: const Icon(Icons.add_photo_alternate_outlined),
-                  ),
-                  const SizedBox(width: 8),
                   Expanded(
                     child: TextButton(
-                      onPressed: () => Navigator.of(context).pop(),
+                      onPressed:
+                          _uploading ? null : () => Navigator.of(context).pop(),
                       child: const Text('Cancelar'),
                     ),
                   ),
@@ -182,9 +323,19 @@ class _PostComposerSheetState extends State<_PostComposerSheet> {
                   Expanded(
                     flex: 2,
                     child: FilledButton.icon(
-                      onPressed: _hasText ? _submit : null,
-                      icon: const Icon(Icons.send, size: 18),
-                      label: const Text('Publicar'),
+                      onPressed: _hasText && !_uploading ? _submit : null,
+                      icon: _uploading
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor:
+                                    AlwaysStoppedAnimation(Colors.white),
+                              ),
+                            )
+                          : const Icon(Icons.send, size: 18),
+                      label: Text(_uploading ? 'Subiendo…' : 'Publicar'),
                     ),
                   ),
                 ],
@@ -192,6 +343,28 @@ class _PostComposerSheetState extends State<_PostComposerSheet> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _RemoveButton extends StatelessWidget {
+  const _RemoveButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.55),
+          shape: BoxShape.circle,
+        ),
+        child: const Icon(Icons.close, size: 16, color: Colors.white),
       ),
     );
   }

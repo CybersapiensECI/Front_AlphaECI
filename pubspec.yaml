@@ -32,6 +32,11 @@ dependencies:
   # Mapa del campus (OpenStreetMap, sin API key) para geolocalización
   flutter_map: ^7.0.2
   latlong2: ^0.9.1
+  # Fotos de galería/cámara en publicaciones
+  image_picker: ^1.1.2
+  # Storage para subir esas fotos y obtener URL pública (sin back propio)
+  firebase_core: ^3.8.0
+  firebase_storage: ^12.3.7
 
 dev_dependencies:
   flutter_test:

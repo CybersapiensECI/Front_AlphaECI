@@ -1,5 +1,11 @@
 # Project-level configuration.
 cmake_minimum_required(VERSION 3.14)
+
+# firebase_cpp_sdk (dependencia de firebase_core en Windows) declara un
+# cmake_minimum_required < 3.5, retirado en CMake >= 4. Esta variable de
+# entorno restaura la compatibilidad sin tocar el código del plugin.
+set(ENV{CMAKE_POLICY_VERSION_MINIMUM} "3.5")
+
 project(alphafront LANGUAGES CXX)
 
 # The name of the executable created for the application. Change this to change
