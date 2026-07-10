@@ -63,6 +63,7 @@ class _ParcheDetailScreenState extends ConsumerState<ParcheDetailScreen> {
     final draft = await showPostComposerSheet(
       context,
       title: 'Publicar en ${widget.parche.name}',
+      parcheId: widget.parche.id,
     );
     if (draft == null || !mounted) return;
     final result = await ref.read(parcheActionsProvider).createPost(

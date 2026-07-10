@@ -113,7 +113,10 @@ abstract final class AppTheme {
         style: FilledButton.styleFrom(
           backgroundColor: colorScheme.primary,
           foregroundColor: colorScheme.onPrimary,
-          minimumSize: const Size.fromHeight(48),
+          // OJO: nunca Size.fromHeight aquí — su ancho mínimo INFINITO
+          // revienta el layout de cualquier FilledButton dentro de un Row
+          // ("BoxConstraints forces an infinite width").
+          minimumSize: const Size(64, 48),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),

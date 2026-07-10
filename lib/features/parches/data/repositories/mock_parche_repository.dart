@@ -136,11 +136,14 @@ class MockParcheRepository implements ParcheRepository {
     int size = 20,
   }) {
     final q = query?.toLowerCase() ?? '';
+    final cat = category?.toUpperCase();
     return _ok([
       for (final p in _parches)
-        if (q.isEmpty ||
-            p.name.toLowerCase().contains(q) ||
-            (p.description?.toLowerCase().contains(q) ?? false))
+        // Igual que el backend real: filtra por categoría Y por texto.
+        if ((cat == null || p.category?.toUpperCase() == cat) &&
+            (q.isEmpty ||
+                p.name.toLowerCase().contains(q) ||
+                (p.description?.toLowerCase().contains(q) ?? false)))
           p,
     ]);
   }

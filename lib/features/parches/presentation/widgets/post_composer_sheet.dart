@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../../core/config/env.dart';
 import '../../../../core/storage/media_upload_service.dart';
 import '../../../../core/theme/design_tokens.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 
 /// Borrador de publicación: texto + foto opcional.
 class PostDraft {
@@ -25,6 +26,7 @@ class PostDraft {
 Future<PostDraft?> showPostComposerSheet(
   BuildContext context, {
   required String title,
+  required String parcheId,
 }) {
   return showModalBottomSheet<PostDraft>(
     context: context,
@@ -34,15 +36,19 @@ Future<PostDraft?> showPostComposerSheet(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
       ),
-      child: _PostComposerSheet(title: title),
+      child: _PostComposerSheet(title: title, parcheId: parcheId),
     ),
   );
 }
 
 class _PostComposerSheet extends ConsumerStatefulWidget {
-  const _PostComposerSheet({required this.title});
+  const _PostComposerSheet({required this.title, required this.parcheId});
 
   final String title;
+
+  /// Parche destino: organiza la ruta en Storage
+  /// (posts/{parcheId}/{userId}/...).
+  final String parcheId;
 
   @override
   ConsumerState<_PostComposerSheet> createState() =>
@@ -84,9 +90,16 @@ class _PostComposerSheetState extends ConsumerState<_PostComposerSheet> {
       maxWidth: 1920,
       imageQuality: 85,
     );
-    if (file == null) return;
+    if (file == null || !mounted) return;
     final bytes = await file.readAsBytes();
     final ext = _extensionOf(file.name);
+    // Validación temprana (tamaño/formato): error claro ANTES de publicar.
+    try {
+      MediaUploadService.validate(bytes, ext);
+    } on MediaValidationException catch (e) {
+      setState(() => _error = e.message);
+      return;
+    }
     setState(() {
       _pickedBytes = bytes;
       _pickedExt = ext;
@@ -100,10 +113,15 @@ class _PostComposerSheetState extends ConsumerState<_PostComposerSheet> {
     final dot = name.lastIndexOf('.');
     if (dot == -1 || dot == name.length - 1) return 'jpg';
     final ext = name.substring(dot + 1).toLowerCase();
-    return switch (ext) {
-      'png' || 'jpg' || 'jpeg' || 'webp' => ext,
-      _ => 'jpg',
-    };
+    return MediaUploadService.allowedExtensions.contains(ext) ? ext : 'jpg';
+  }
+
+  /// URL manual válida: http/https con host. Nada de file://, data:, etc.
+  bool _isValidManualUrl(String url) {
+    final uri = Uri.tryParse(url);
+    return uri != null &&
+        (uri.scheme == 'http' || uri.scheme == 'https') &&
+        uri.host.isNotEmpty;
   }
 
   void _removePhoto() => setState(() {
@@ -115,9 +133,14 @@ class _PostComposerSheetState extends ConsumerState<_PostComposerSheet> {
     final text = _text.text.trim();
     if (text.isEmpty) return;
 
-    // Pegaron una URL manual: usarla tal cual, sin subir nada.
+    // Pegaron una URL manual: validar que sea http(s) real antes de usarla.
     final manualUrl = _photoUrlField.text.trim();
     if (_pickedBytes == null && manualUrl.isNotEmpty) {
+      if (!_isValidManualUrl(manualUrl)) {
+        setState(() =>
+            _error = 'La URL no es válida. Debe empezar con http(s)://');
+        return;
+      }
       Navigator.of(context).pop(PostDraft(text: text, photoUrl: manualUrl));
       return;
     }
@@ -129,7 +152,8 @@ class _PostComposerSheetState extends ConsumerState<_PostComposerSheet> {
     }
 
     // Demo: no hay Firebase real que subir — usar una muestra pública.
-    if (Env.demoMode) {
+    // TODO(firebase-test): quitar `&& !Env.firebaseTest` al eliminar el flag.
+    if (Env.demoMode && !Env.firebaseTest) {
       final seed = DateTime.now().microsecondsSinceEpoch;
       Navigator.of(context).pop(
         PostDraft(
@@ -140,17 +164,29 @@ class _PostComposerSheetState extends ConsumerState<_PostComposerSheet> {
       return;
     }
 
-    // Subir a Firebase Storage y usar la URL pública resultante.
+    // Subir a Firebase Storage y usar la URL pública resultante
+    // (downloadURL https — jamás una ruta local file://).
     setState(() {
       _uploading = true;
       _error = null;
     });
     try {
-      final url = await ref
-          .read(mediaUploadServiceProvider)
-          .uploadPostImage(_pickedBytes!, ext: _pickedExt);
+      final userId =
+          ref.read(authControllerProvider).session?.userId ?? 'anon';
+      final url = await ref.read(mediaUploadServiceProvider).uploadPostImage(
+            _pickedBytes!,
+            parcheId: widget.parcheId,
+            userId: userId,
+            ext: _pickedExt,
+          );
       if (!mounted) return;
       Navigator.of(context).pop(PostDraft(text: text, photoUrl: url));
+    } on MediaValidationException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _uploading = false;
+        _error = e.message;
+      });
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -227,7 +263,7 @@ class _PostComposerSheetState extends ConsumerState<_PostComposerSheet> {
                     ),
                   ],
                 ),
-                if (Env.demoMode) ...[
+                if (Env.demoMode && !Env.firebaseTest) ...[
                   const SizedBox(height: 6),
                   Text(
                     'Modo demo: se publicará con una imagen de muestra '

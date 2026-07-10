@@ -34,6 +34,7 @@ class FeedScreen extends ConsumerWidget {
     final draft = await showPostComposerSheet(
       context,
       title: 'Publicar en ${parche.name}',
+      parcheId: parche.id,
     );
     if (draft == null || !context.mounted) return;
     final result = await ref.read(parcheActionsProvider).createPost(

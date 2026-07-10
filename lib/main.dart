@@ -11,7 +11,8 @@ void main() async {
   // Demo: sin backends, tampoco necesita Firebase (subida de fotos se
   // simula). Fuera de demo, si el proyecto aún no corrió
   // `flutterfire configure`, seguimos igual — solo falla al subir fotos.
-  if (!Env.demoMode) {
+  // TODO(firebase-test): quitar `|| Env.firebaseTest` al eliminar el flag.
+  if (!Env.demoMode || Env.firebaseTest) {
     try {
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,

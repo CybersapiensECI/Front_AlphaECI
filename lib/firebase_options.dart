@@ -52,7 +52,8 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyBJdnjAatWtFgE376x7m_ELUkXmHA0kvu0',
-    appId: '1:63766514477:android:fec1309d49bbae61ec21a4',
+    // App Android registrada como com.alphaeci.app (no la com.example).
+    appId: '1:63766514477:android:5bd6ae9c4f3895caec21a4',
     messagingSenderId: '63766514477',
     projectId: 'alphaeci',
     storageBucket: 'alphaeci.firebasestorage.app',

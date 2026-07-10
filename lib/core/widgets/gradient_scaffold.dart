@@ -191,7 +191,12 @@ class _FloatingBlobBackgroundState extends State<FloatingBlobBackground>
             children: [
               ColoredBox(color: Theme.of(context).scaffoldBackgroundColor),
               // Capa 1: blobs de color que siguen al puntero.
-              AnimatedBuilder(
+              // IgnorePointer OBLIGATORIO: los blobs se mueven cada frame
+              // bajo el cursor; si participan del hit-test, el MouseTracker
+              // re-evalúa durante su propio update y revienta con
+              // "'!_debugDuringDeviceUpdate': is not true" en desktop.
+              IgnorePointer(
+                child: AnimatedBuilder(
                 animation: Listenable.merge([_drift, _pulse, _pointer]),
                 builder: (context, _) {
                   final t = _drift.value;
@@ -237,7 +242,8 @@ class _FloatingBlobBackgroundState extends State<FloatingBlobBackground>
                       ),
                     ],
                   );
-                },
+                  },
+                ),
               ),
               // Capa 2: red de personas conectándose. Sin ImageFiltered:
               // blur por frame congelaba la animación en web/HTML renderer.

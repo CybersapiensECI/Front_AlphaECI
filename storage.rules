@@ -1,0 +1,49 @@
+rules_version = '2';
+
+// ─────────────────────────────────────────────────────────────────────
+// Reglas de Firebase Storage — AlphaECI (DESARROLLO)
+// Pegar en: Consola Firebase → Storage → Rules.
+//
+// La app NO usa Firebase Auth todavía (login propio email/OTP contra el
+// backend), así que NO se puede exigir request.auth aquí. Estas reglas
+// acotan el daño mientras tanto:
+//   - solo se puede escribir bajo /posts/**;
+//   - solo imágenes (contentType image/*);
+//   - máximo 5 MB (alineado con MediaUploadService.maxBytes);
+//   - lectura pública solo bajo /posts/**;
+//   - todo lo demás del bucket, bloqueado.
+// ─────────────────────────────────────────────────────────────────────
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /posts/{allPaths=**} {
+      allow read: if true;
+
+      allow write: if request.resource.size < 5 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// FUTURO (PRODUCCIÓN) — NO ACTIVAR AÚN: requiere Firebase Auth, que hoy
+// no existe en la app. Cuando el backend emita custom tokens de Firebase
+// tras el login email/OTP, reemplazar el bloque /posts por:
+//
+//   match /posts/{parcheId}/{userId}/{allPaths=**} {
+//     allow read: if true;
+//     allow write: if request.auth != null
+//                  && request.auth.uid == userId
+//                  && request.resource.size < 5 * 1024 * 1024
+//                  && request.resource.contentType.matches('image/.*');
+//   }
+//
+// Alternativas equivalentes (elegir una, ver TODO en
+// lib/core/storage/media_upload_service.dart):
+//   - signed upload URLs generadas por el backend;
+//   - el backend recibe la imagen y la sube él mismo;
+//   - el backend valida pertenencia al parche antes de aceptar photoUrl.
+// ─────────────────────────────────────────────────────────────────────

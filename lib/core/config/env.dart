@@ -4,9 +4,15 @@
 /// TODO(gateway): cuando se confirme el API Gateway (Kong), colapsar
 /// todo a una sola GATEWAY_URL.
 abstract final class Env {
+  /// TODO(firebase-test): flag TEMPORAL para probar Firebase Storage sin
+  /// levantar los backends — mocks para todo, Firebase real para subir
+  /// fotos. Eliminar cuando el back esté desplegado.
+  /// Activar: flutter run -d windows --dart-define=FIREBASE_TEST=true
+  static const firebaseTest = bool.fromEnvironment('FIREBASE_TEST');
+
   /// Modo demo: sin backends. Repositories mock con datos de muestra.
   /// Activar: flutter run --dart-define=DEMO=true
-  static const demoMode = bool.fromEnvironment('DEMO');
+  static const demoMode = bool.fromEnvironment('DEMO') || firebaseTest;
 
   static const authUrl = String.fromEnvironment(
     'AUTH_URL',
