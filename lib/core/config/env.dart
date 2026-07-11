@@ -1,8 +1,10 @@
-/// URLs base por servicio. Se sobreescriben con --dart-define:
-///   flutter run --dart-define=AUTH_URL=http://10.0.2.2:8080
+/// Configuración de entorno. Con el API Gateway (AlphaGateway) todos los
+/// servicios REST se consumen por UNA sola URL:
+///   flutter run --dart-define=GATEWAY_URL=https://url-del-gateway
+/// (default: gateway local en :8080 — `mvnw spring-boot:run` en AlphaGateway).
 ///
-/// TODO(gateway): cuando se confirme el API Gateway (Kong), colapsar
-/// todo a una sola GATEWAY_URL.
+/// Cada servicio conserva su override individual por si hay que apuntar
+/// directo a un despliegue puntual (p. ej. --dart-define=AUTH_URL=...).
 abstract final class Env {
   /// TODO(firebase-test): flag TEMPORAL para probar Firebase Storage sin
   /// levantar los backends — mocks para todo, Firebase real para subir
@@ -14,58 +16,58 @@ abstract final class Env {
   /// Activar: flutter run --dart-define=DEMO=true
   static const demoMode = bool.fromEnvironment('DEMO') || firebaseTest;
 
-  static const authUrl = String.fromEnvironment(
-    'AUTH_URL',
+  /// URL base del API Gateway (única puerta de entrada REST).
+  static const gatewayUrl = String.fromEnvironment(
+    'GATEWAY_URL',
     defaultValue: 'http://localhost:8080',
   );
 
-  static const profileUrl = String.fromEnvironment(
-    'PROFILE_URL',
-    defaultValue: 'http://localhost:8081',
-  );
+  // ── Servicios REST: por defecto, todos via gateway ──────────────
+  static const authUrl =
+      String.fromEnvironment('AUTH_URL', defaultValue: gatewayUrl);
 
-  static const matchingUrl = String.fromEnvironment(
-    'MATCHING_URL',
-    defaultValue: 'http://localhost:8083',
-  );
+  static const profileUrl =
+      String.fromEnvironment('PROFILE_URL', defaultValue: gatewayUrl);
 
-  static const chatUrl = String.fromEnvironment(
-    'CHAT_URL',
-    defaultValue: 'http://localhost:8084',
-  );
+  static const matchingUrl =
+      String.fromEnvironment('MATCHING_URL', defaultValue: gatewayUrl);
 
-  static const notificationUrl = String.fromEnvironment(
-    'NOTIFICATION_URL',
-    defaultValue: 'http://localhost:8085',
-  );
+  static const chatUrl =
+      String.fromEnvironment('CHAT_URL', defaultValue: gatewayUrl);
 
-  static const eventUrl = String.fromEnvironment(
-    'EVENT_URL',
-    defaultValue: 'http://localhost:8086',
-  );
+  static const notificationUrl =
+      String.fromEnvironment('NOTIFICATION_URL', defaultValue: gatewayUrl);
 
-  static const bienestarUrl = String.fromEnvironment(
-    'BIENESTAR_URL',
-    defaultValue: 'http://localhost:8087',
-  );
+  static const eventUrl =
+      String.fromEnvironment('EVENT_URL', defaultValue: gatewayUrl);
 
-  static const geoUrl = String.fromEnvironment(
-    'GEO_URL',
-    defaultValue: 'http://localhost:8088',
-  );
+  static const bienestarUrl =
+      String.fromEnvironment('BIENESTAR_URL', defaultValue: gatewayUrl);
 
-  static const gamificationUrl = String.fromEnvironment(
-    'GAMIFICATION_URL',
-    defaultValue: 'http://localhost:8089',
-  );
+  static const geoUrl =
+      String.fromEnvironment('GEO_URL', defaultValue: gatewayUrl);
 
-  static const statsUrl = String.fromEnvironment(
-    'STATS_URL',
-    defaultValue: 'http://localhost:8082',
-  );
+  // TODO(gateway): la ruta /api/gamification/** del gateway usa
+  // StripPrefix=1 pero GamificationService sirve /api/v1/gamification/**
+  // — vía gateway hoy da 404. Igual /api/estadisticas/** vs
+  // /api/v1/metrics/**, y parches declara /api/v1/parches/** pero el
+  // backend sirve /api/parches/** (y faltan /api/invitations,
+  // /api/posts). Corregir en AlphaGateway/application.yml.
+  static const gamificationUrl =
+      String.fromEnvironment('GAMIFICATION_URL', defaultValue: gatewayUrl);
 
-  static const parchesUrl = String.fromEnvironment(
-    'PARCHES_URL',
-    defaultValue: 'http://localhost:8090',
+  static const statsUrl =
+      String.fromEnvironment('STATS_URL', defaultValue: gatewayUrl);
+
+  static const parchesUrl =
+      String.fromEnvironment('PARCHES_URL', defaultValue: gatewayUrl);
+
+  /// WebSocket del chat (STOMP /ws-chat). El gateway NO rutea este WS
+  /// (solo tiene /ws-location de geo), así que va DIRECTO al despliegue
+  /// de chat-service. TODO(gateway): agregar ruta wss para /ws-chat.
+  static const chatWsUrl = String.fromEnvironment(
+    'CHAT_WS_URL',
+    defaultValue:
+        'https://chat-service-prod.gentlebeach-15ecf803.eastus.azurecontainerapps.io',
   );
 }

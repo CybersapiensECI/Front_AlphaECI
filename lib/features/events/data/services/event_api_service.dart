@@ -2,13 +2,14 @@ import 'package:dio/dio.dart';
 
 import '../../domain/entities/event.dart';
 
-/// HTTP crudo contra EventService.
+/// HTTP crudo contra EventService (vía gateway: /api/events/** con
+/// StripPrefix=1 — el backend recibe /events/**).
 class EventApiService {
   const EventApiService(this._dio);
 
   final Dio _dio;
 
-  static const _base = '/events';
+  static const _base = '/api/events';
 
   Future<List<UniversityEvent>> getEvents({String? category}) async {
     final response = await _dio.get<List<dynamic>>(

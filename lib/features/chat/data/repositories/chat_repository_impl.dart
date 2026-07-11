@@ -68,7 +68,8 @@ class ChatRepositoryImpl implements ChatRepository {
     if (_stomp != null) return;
     _stomp = StompClient(
       config: StompConfig.sockJS(
-        url: '${Env.chatUrl}/ws-chat',
+        // WS directo al chat-service: el gateway no rutea /ws-chat.
+        url: '${Env.chatWsUrl}/ws-chat',
         onConnect: (frame) {
           _connected = true;
           for (final roomId in _pendingSubscriptions) {

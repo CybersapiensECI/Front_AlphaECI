@@ -12,7 +12,8 @@ class WellbeingRepositoryImpl implements WellbeingRepository {
 
   final Dio _dio;
 
-  static const _base = '/bienestar';
+  // Vía gateway: /api/bienestar/** con StripPrefix=1 (backend: /bienestar).
+  static const _base = '/api/bienestar';
 
   @override
   Future<Result<List<WellbeingResource>>> getResources({String? category}) {
