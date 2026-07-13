@@ -9,11 +9,11 @@ import '../../data/repositories/mock_gamification_repository.dart';
 import '../../domain/entities/mona.dart';
 import '../../domain/repositories/gamification_repository.dart';
 
-final gamificationRepositoryProvider =
-    Provider<GamificationRepository>((ref) {
+final gamificationRepositoryProvider = Provider<GamificationRepository>((ref) {
   if (Env.demoMode) return const MockGamificationRepository();
   return GamificationRepositoryImpl(
-      ref.watch(apiClientProvider(Env.gamificationUrl)));
+    ref.watch(apiClientProvider(Env.gamificationUrl)),
+  );
 });
 
 final myMonasProvider = FutureProvider<UserMonas>((ref) async {
