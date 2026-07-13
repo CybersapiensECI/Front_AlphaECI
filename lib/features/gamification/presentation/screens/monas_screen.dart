@@ -103,7 +103,10 @@ class MonasBody extends ConsumerWidget {
                             crossAxisCount: columns,
                             mainAxisSpacing: 12,
                             crossAxisSpacing: 12,
-                            childAspectRatio: 0.78,
+                            // 0.72: aire vertical suficiente para anillo +
+                            // nombre en 2 líneas + chip de rareza (0.78
+                            // desbordaba ~1.5px en teléfonos).
+                            childAspectRatio: 0.72,
                           ),
                           itemCount: slots.length,
                           itemBuilder: (context, index) {
@@ -270,8 +273,11 @@ class _AlbumSlot extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
+            const SizedBox(height: 6),
+            // Flexible: si el alto no alcanza, el texto cede (ellipsis)
+            // en vez de desbordar la casilla.
+            Flexible(
+              child: Text(
               locked ? '???' : mona.name,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -283,6 +289,7 @@ class _AlbumSlot extends StatelessWidget {
                     : state == _MonaState.unlocked
                         ? Colors.white
                         : scheme.onSurface,
+              ),
               ),
             ),
             if (!locked && mona.rarity != null) ...[
