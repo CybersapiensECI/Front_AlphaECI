@@ -107,7 +107,9 @@ class MonasBody extends ConsumerWidget {
                           crossAxisCount: columns,
                           mainAxisSpacing: 12,
                           crossAxisSpacing: 12,
-                          childAspectRatio: 0.78,
+                          // 0.68: alto suficiente para medalla + nombre a
+                          // 2 líneas + badge de % (0.78 desbordaba ~5px).
+                          childAspectRatio: 0.68,
                         ),
                         itemCount: slots.length,
                         itemBuilder: (context, index) {
@@ -561,20 +563,25 @@ class _AlbumSlot extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               // Nombre real siempre visible: solo el arte queda encadenado.
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.24),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  mona.name,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
+              // Flexible: si el alto no alcanza (fuentes grandes), el texto
+              // cede con ellipsis en vez de desbordar la casilla.
+              Flexible(
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.24),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    mona.name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
