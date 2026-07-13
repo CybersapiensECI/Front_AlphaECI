@@ -8,6 +8,7 @@ class Mona extends Equatable {
     required this.name,
     this.description,
     this.rarity,
+    this.category,
     this.imageUrl,
     this.xpGranted = 0,
     this.progressPercentage,
@@ -19,8 +20,12 @@ class Mona extends Equatable {
   final String name;
   final String? description;
 
-  /// COMMON / RARE / EPIC / LEGENDARY (MonaRarity).
+  /// COMMON / UNCOMMON / RARE / EPIC / LEGENDARY (MonaRarity).
   final String? rarity;
+
+  /// NETWORKING / CAFETERIAS / EDIFICIOS / ESTILO_DE_VIDA / EVENTOS /
+  /// LEGENDARIAS (MonaCategory). Ver LISTA_MONAS.md.
+  final String? category;
   final String? imageUrl;
   final int xpGranted;
 
