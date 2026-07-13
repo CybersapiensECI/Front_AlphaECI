@@ -55,6 +55,47 @@ const Map<String, String> _codeToCategory = {
   'EMBAJADOR_CAMPUS': kMonaCategoryLegendarias,
 };
 
+/// Códigos → archivo en assets/monas (snake_case, sin espacios: los
+/// espacios en nombres de asset rompen la carga en Flutter Web por
+/// doble URL-encoding).
+const Map<String, String> _codeToImage = {
+  'PRIMER_CONTACTO': 'primer_contacto.png',
+  'NETWORKING_5': 'networking_5.png',
+  'NETWORKING_10': 'networking_10.png',
+  'NETWORKING_25': 'networking_25.png',
+  'NETWORKING_50': 'networking_50.png',
+  'INICIADOR_PARCHE': 'iniciador_de_parche.png',
+  'CAPITAN_EQUIPO': 'capitan_de_equipo.png',
+  'ORGANIZADOR_ELITE': 'organizador_de_elite.png',
+  'PRIMER_MENSAJERO': 'primer_mensajero.png',
+  'ANFITRION': 'anfitrion.png',
+  'CONECTOR_VELOZ': 'conector_veloz.png',
+  'EXPLORADOR_CAFETERIAS': 'explorador_de_cafeterias.png',
+  'FAN_REGIO': 'fan_del_regio.png',
+  'CLIENTE_FRECUENTE': 'cliente_frecuente.png',
+  'RUTA_CAFE': 'ruta_del_cafe.png',
+  'EDIFICIO_A': 'edificio_a.png',
+  'EDIFICIO_B': 'edificio_b.png',
+  'EDIFICIO_C': 'edificio_c.png',
+  'EDIFICIO_D': 'edificio_d.png',
+  'EDIFICIO_E': 'edificio_e.png',
+  'EDIFICIO_F': 'edificio_f.png',
+  'EDIFICIO_G': 'edificio_g.png',
+  'EDIFICIO_H': 'edificio_h.png',
+  'EDIFICIO_I': 'edificio_i.png',
+  'TOUR_CAMPUS': 'tour_campus.png',
+  'ZEN_MASTER': 'zen_master.png',
+  'ATLETA_PATIO': 'atleta_de_patio.png',
+  'MARATON_UNIVERSITARIA': 'maraton_universitaria.png',
+  'NOCTAMBULO_ACADEMICO': 'noctambulo_academico.png',
+  'AMANECER_PRODUCTIVO': 'amanecer_productivo.png',
+  'ASISTENTE_VIP': 'asistente_vip.png',
+  'INVITADO_ESPECIAL': 'invitado_especial.png',
+  'CONQUISTADOR_CAMPUS': 'conquistador_del_campus.png',
+  'LEYENDA_CAMPUS': 'leyenda_del_campus.png',
+  'EMBAJADOR_CAMPUS': 'embajador_del_campus.png',
+};
+
 String _normalize(String value) => value
     .toUpperCase()
     .replaceAll('Á', 'A')
@@ -92,6 +133,14 @@ String monaCategoryOf(Mona mona) {
     return kMonaCategoryLegendarias;
   }
   return kMonaCategoryNetworking;
+}
+
+/// Ruta del arte real de la mona en assets/monas, si existe en el
+/// catálogo. `null` cuando el código no tiene imagen asociada (usar
+/// ícono de respaldo en ese caso).
+String? monaImageAsset(Mona mona) {
+  final file = _codeToImage[_normalize(mona.code)];
+  return file == null ? null : 'assets/monas/$file';
 }
 
 /// Gradiente metálico de 4 tonos (claro → medio → oscuro → reflejo) por
