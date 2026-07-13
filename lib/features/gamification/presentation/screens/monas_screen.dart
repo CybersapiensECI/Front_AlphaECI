@@ -14,17 +14,29 @@ import '../providers/gamification_provider.dart';
 
 /// Colección de monas como ÁLBUM de pegatinas: casillas desbloqueadas a
 /// color, en progreso con anillo, y bloqueadas como silueta por descubrir.
-class MonasScreen extends ConsumerWidget {
+/// Pantalla completa (ruta pushed desde Perfil).
+class MonasScreen extends StatelessWidget {
   const MonasScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return GradientScaffold(
+      appBar: AppBar(title: const Text('Álbum de Monas')),
+      body: const MonasBody(),
+    );
+  }
+}
+
+/// Cuerpo del álbum, reutilizable como tab del shell principal.
+class MonasBody extends ConsumerWidget {
+  const MonasBody({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final monas = ref.watch(myMonasProvider);
     final theme = Theme.of(context);
 
-    return GradientScaffold(
-      appBar: AppBar(title: const Text('Álbum de Monas')),
-      body: AsyncValueView<UserMonas>(
+    return AsyncValueView<UserMonas>(
         value: monas,
         onRetry: () => ref.invalidate(myMonasProvider),
         data: (data) {
@@ -110,7 +122,6 @@ class MonasScreen extends ConsumerWidget {
             ),
           );
         },
-      ),
     );
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_assets.dart';
 import '../../../../core/theme/design_tokens.dart';
+import '../../../../core/widgets/app_sheet.dart';
 import '../../../../core/widgets/animations.dart';
 import '../../../../core/widgets/mascot.dart';
 import '../../../auth/presentation/widgets/auth_layout.dart'
@@ -18,16 +19,9 @@ Future<void> showCommentsSheet(
   required String parcheId,
   required String postId,
 }) {
-  return showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (sheetContext) => Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
-      ),
-      child: _CommentsSheet(parcheId: parcheId, postId: postId),
-    ),
+  return showAppSheet<void>(
+    context,
+    child: _CommentsSheet(parcheId: parcheId, postId: postId),
   );
 }
 
@@ -94,35 +88,10 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
       ),
     );
 
-    return Container(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.72,
-      ),
-      decoration: BoxDecoration(
-        color: scheme.surface,
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(AppRadii.xl),
-        ),
-        border: Border.all(color: scheme.outline.withValues(alpha: 0.2)),
-      ),
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
-      child: SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+    // Contenedor/alto/handle: los pone AppSheet (estándar de la app).
+    return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: scheme.outline.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
             Text(
               comments.isEmpty
                   ? 'Comentarios'
@@ -130,11 +99,10 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
               style: theme.textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
-            // ── Lista de comentarios ─────────────────────────
-            Flexible(
+            // ── Lista de comentarios (llena los 2/3 de alto) ──
+            Expanded(
               child: comments.isEmpty
-                  ? const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 12),
+                  ? const Center(
                       child: MascotEmptyState(
                         asset: AppAssets.stickerHello,
                         message:
@@ -142,7 +110,6 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
                       ),
                     )
                   : ListView.builder(
-                      shrinkWrap: true,
                       itemCount: comments.length,
                       itemBuilder: (context, index) {
                         final comment = comments[index];
@@ -251,8 +218,6 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
               ],
             ),
           ],
-        ),
-      ),
     );
   }
 }

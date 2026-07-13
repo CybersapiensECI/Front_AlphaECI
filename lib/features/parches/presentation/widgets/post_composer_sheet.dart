@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../../core/config/env.dart';
 import '../../../../core/storage/media_upload_service.dart';
 import '../../../../core/theme/design_tokens.dart';
+import '../../../../core/widgets/app_sheet.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
 /// Borrador de publicación: texto + foto opcional.
@@ -28,16 +29,9 @@ Future<PostDraft?> showPostComposerSheet(
   required String title,
   required String parcheId,
 }) {
-  return showModalBottomSheet<PostDraft>(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (sheetContext) => Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
-      ),
-      child: _PostComposerSheet(title: title, parcheId: parcheId),
-    ),
+  return showAppSheet<PostDraft>(
+    context,
+    child: _PostComposerSheet(title: title, parcheId: parcheId),
   );
 }
 
@@ -202,37 +196,18 @@ class _PostComposerSheetState extends ConsumerState<_PostComposerSheet> {
     final scheme = theme.colorScheme;
     final manualUrl = _photoUrlField.text.trim();
 
-    return Container(
-      decoration: BoxDecoration(
-        color: scheme.surface,
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(AppRadii.xl),
-        ),
-        border: Border.all(
-          color: scheme.outline.withValues(alpha: 0.2),
-        ),
-      ),
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-      child: SafeArea(
-        top: false,
-        child: SingleChildScrollView(
+    // Contenedor/alto/handle: AppSheet (estándar 2/3 de pantalla).
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(widget.title, style: theme.textTheme.titleMedium),
+        const SizedBox(height: 12),
+        // Campos scrolleables; acciones fijas abajo.
+        Expanded(
+          child: SingleChildScrollView(
           child: Column(
-            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Center(
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: scheme.outline.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(widget.title, style: theme.textTheme.titleMedium),
-              const SizedBox(height: 12),
               TextField(
                 controller: _text,
                 autofocus: true,
@@ -345,41 +320,42 @@ class _PostComposerSheetState extends ConsumerState<_PostComposerSheet> {
                     const Spacer(),
                   ],
                 ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextButton(
-                      onPressed:
-                          _uploading ? null : () => Navigator.of(context).pop(),
-                      child: const Text('Cancelar'),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    flex: 2,
-                    child: FilledButton.icon(
-                      onPressed: _hasText && !_uploading ? _submit : null,
-                      icon: _uploading
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor:
-                                    AlwaysStoppedAnimation(Colors.white),
-                              ),
-                            )
-                          : const Icon(Icons.send, size: 18),
-                      label: Text(_uploading ? 'Subiendo…' : 'Publicar'),
-                    ),
-                  ),
-                ],
-              ),
             ],
           ),
+          ),
         ),
-      ),
+        const SizedBox(height: 8),
+        // ── Acciones fijas al pie del sheet ──
+        Row(
+          children: [
+            Expanded(
+              child: TextButton(
+                onPressed:
+                    _uploading ? null : () => Navigator.of(context).pop(),
+                child: const Text('Cancelar'),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              flex: 2,
+              child: FilledButton.icon(
+                onPressed: _hasText && !_uploading ? _submit : null,
+                icon: _uploading
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation(Colors.white),
+                        ),
+                      )
+                    : const Icon(Icons.send, size: 18),
+                label: Text(_uploading ? 'Subiendo…' : 'Publicar'),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

@@ -103,7 +103,7 @@ class _ParchesScreenState extends ConsumerState<ParchesScreen> {
                 const SizedBox(width: 8),
                 for (final category in kParcheCategories) ...[
                   InterestChip(
-                    label: category,
+                    label: AppCategoryStyles.labelOf(category),
                     selected: filter.category == category,
                     accent: AppCategoryStyles.of(category).$2,
                     onTap: () =>
@@ -277,7 +277,7 @@ class ParcheCard extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        parche.category!,
+                        AppCategoryStyles.labelOf(parche.category),
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 11,

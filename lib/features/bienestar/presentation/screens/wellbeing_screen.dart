@@ -6,8 +6,10 @@ import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/animations.dart';
 import '../../../../core/widgets/async_value_view.dart';
 import '../../../../core/widgets/empty_state.dart';
+import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/widgets/glass_card.dart';
 import '../../../../core/widgets/gradient_scaffold.dart';
+import '../../../../core/widgets/interest_chip.dart';
 import '../../../../core/widgets/mascot.dart';
 import '../../domain/entities/wellbeing.dart';
 import '../providers/wellbeing_provider.dart';
@@ -109,21 +111,25 @@ class WellbeingScreen extends ConsumerWidget {
                 // ── Recursos ───────────────────────────────
                 Text('Recursos', style: theme.textTheme.titleLarge),
                 const SizedBox(height: 10),
+                // Chips uniformes con el resto de la app (InterestChip
+                // + labels Title case).
                 Wrap(
                   spacing: 8,
+                  runSpacing: 8,
                   children: [
-                    ChoiceChip(
-                      label: const Text('Todos'),
+                    InterestChip(
+                      label: 'Todos',
                       selected: selected == null,
-                      onSelected: (_) => ref
+                      onTap: () => ref
                           .read(wellbeingCategoryProvider.notifier)
                           .state = null,
                     ),
                     for (final category in _categories)
-                      ChoiceChip(
-                        label: Text(category),
+                      InterestChip(
+                        label: AppCategoryStyles.labelOf(category),
                         selected: selected == category,
-                        onSelected: (_) => ref
+                        accent: AppCategoryStyles.of(category).$2,
+                        onTap: () => ref
                             .read(wellbeingCategoryProvider.notifier)
                             .state = category,
                       ),

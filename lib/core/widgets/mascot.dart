@@ -15,7 +15,7 @@ class BrandLogo extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     return SizedBox(
       width: size,
-      height: size * 1.15, // el escudo es ligeramente más alto que ancho
+      height: size * 1.35, // proporción real del escudo (522x706)
       child: Image.asset(
         AppAssets.logo,
         fit: BoxFit.contain,

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/router/routes.dart';
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/widgets/animations.dart';
+import '../../../../core/widgets/image_viewer.dart';
 import '../../../auth/presentation/widgets/auth_layout.dart'
     show showAppSnackBar;
 import '../../../parches/presentation/providers/comments_provider.dart';
@@ -153,7 +154,7 @@ class PublicationCard extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
-                        parche.category!,
+                        AppCategoryStyles.labelOf(parche.category),
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 10,
@@ -177,14 +178,18 @@ class PublicationCard extends ConsumerWidget {
                   Text(post.text!, style: theme.textTheme.bodyMedium),
                 if (post.photoUrl?.isNotEmpty == true) ...[
                   const SizedBox(height: 10),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(AppRadii.md),
-                    child: Image.network(
-                      post.photoUrl!,
-                      width: double.infinity,
-                      height: 200,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                  // Tap: abre la imagen completa con zoom.
+                  GestureDetector(
+                    onTap: () => showImageViewer(context, post.photoUrl!),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(AppRadii.md),
+                      child: Image.network(
+                        post.photoUrl!,
+                        width: double.infinity,
+                        height: 200,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                      ),
                     ),
                   ),
                 ],

@@ -7,6 +7,7 @@ import '../../../../core/widgets/animations.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/theme/app_assets.dart';
 import '../../../../core/widgets/gradient_scaffold.dart';
+import '../../../../core/widgets/image_viewer.dart';
 import '../../../../core/widgets/mascot.dart';
 import '../widgets/comments_sheet.dart';
 import '../widgets/post_composer_sheet.dart';
@@ -310,19 +311,24 @@ class _ParcheDetailScreenState extends ConsumerState<ParcheDetailScreen> {
                                           Padding(
                                             padding: const EdgeInsets
                                                 .only(top: 6, bottom: 4),
-                                            child: ClipRRect(
-                                              borderRadius:
-                                                  BorderRadius.circular(
-                                                      10),
-                                              child: Image.network(
-                                                post.photoUrl!,
-                                                height: 140,
-                                                width: double.infinity,
-                                                fit: BoxFit.cover,
-                                                errorBuilder:
-                                                    (_, _, _) =>
-                                                        const SizedBox
-                                                            .shrink(),
+                                            child: GestureDetector(
+                                              onTap: () =>
+                                                  showImageViewer(context,
+                                                      post.photoUrl!),
+                                              child: ClipRRect(
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                        10),
+                                                child: Image.network(
+                                                  post.photoUrl!,
+                                                  height: 140,
+                                                  width: double.infinity,
+                                                  fit: BoxFit.cover,
+                                                  errorBuilder:
+                                                      (_, _, _) =>
+                                                          const SizedBox
+                                                              .shrink(),
+                                                ),
                                               ),
                                             ),
                                           ),

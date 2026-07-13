@@ -8,6 +8,7 @@ import '../../../../core/widgets/adaptive_scaffold.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../events/presentation/screens/events_screen.dart';
 import '../../../feed/presentation/screens/feed_screen.dart';
+import '../../../gamification/presentation/screens/monas_screen.dart';
 import '../../../matching/presentation/screens/discovery_screen.dart';
 import '../../../matching/presentation/screens/matches_screen.dart';
 import '../../../notifications/presentation/providers/notification_provider.dart';
@@ -25,7 +26,8 @@ abstract final class HomeTabs {
   static const descubrir = 2;
   static const matches = 3;
   static const eventos = 4;
-  static const perfil = 5;
+  static const monas = 5;
+  static const perfil = 6;
 }
 
 /// Shell principal: Inicio · Parches · Descubrir · Matches · Eventos · Perfil.
@@ -68,6 +70,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       icon: Icons.event_outlined,
       selectedIcon: Icons.event,
       label: 'Eventos',
+    ),
+    // Álbum de monas (gamificación) accesible desde la navegación.
+    AdaptiveDestination(
+      icon: Icons.emoji_events_outlined,
+      selectedIcon: Icons.emoji_events,
+      label: 'Monas',
     ),
     AdaptiveDestination(
       icon: Icons.person_outline,
@@ -163,6 +171,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           2 => const DiscoveryScreen(key: ValueKey('discovery')),
           3 => const MatchesScreen(key: ValueKey('matches')),
           4 => const EventsScreen(key: ValueKey('events')),
+          5 => const MonasBody(key: ValueKey('monas')),
           _ => const ProfileScreen(key: ValueKey('profile')),
         },
       ),

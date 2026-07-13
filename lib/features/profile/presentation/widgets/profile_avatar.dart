@@ -25,6 +25,7 @@ class ProfileAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
@@ -37,7 +38,9 @@ class ProfileAvatar extends StatelessWidget {
       ),
       child: CircleAvatar(
         radius: radius,
-        backgroundColor: scheme.surface,
+        // Fondo INVERTIDO al tema para contraste: claro en modo oscuro,
+        // oscuro en modo claro (onSurface ya es ese color en cada tema).
+        backgroundColor: scheme.onSurface,
         foregroundImage:
             (photoUrl != null && photoUrl!.isNotEmpty)
                 ? NetworkImage(photoUrl!)
@@ -47,7 +50,8 @@ class ProfileAvatar extends StatelessWidget {
           style: TextStyle(
             fontSize: radius * 0.7,
             fontWeight: FontWeight.w700,
-            color: scheme.primary,
+            // Legible sobre el fondo invertido, manteniendo la marca.
+            color: isDark ? scheme.primary : scheme.tertiary,
           ),
         ),
       ),

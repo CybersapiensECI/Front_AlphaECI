@@ -11,6 +11,7 @@ import '../../../../core/widgets/glass_card.dart';
 import '../../../../core/widgets/mascot.dart';
 import '../../../auth/presentation/widgets/auth_layout.dart'
     show showAppSnackBar;
+import '../../../profile/presentation/providers/profile_provider.dart';
 import '../../../profile/presentation/widgets/profile_avatar.dart';
 import '../../domain/entities/match.dart';
 import '../providers/matching_provider.dart';
@@ -321,14 +322,32 @@ class _ActionButton extends StatelessWidget {
   }
 }
 
-class _MatchOverlay extends StatelessWidget {
+class _MatchOverlay extends ConsumerWidget {
   const _MatchOverlay({required this.candidate});
 
   final DiscoveryCandidate candidate;
 
+  /// Avatar con anillo de gradiente de marca (una persona del match).
+  Widget _avatarRing(BuildContext context, {String? name, String? photoUrl}) {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: AppGradients.of(context),
+        boxShadow: AppShadows.glow(Theme.of(context).colorScheme.tertiary),
+      ),
+      child: ProfileAvatar(
+        name: name ?? 'Tú',
+        photoUrl: photoUrl,
+        radius: 44,
+      ),
+    );
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final me = ref.watch(myProfileProvider).valueOrNull;
     return Center(
       child: Material(
         type: MaterialType.transparency,
@@ -343,26 +362,38 @@ class _MatchOverlay extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const MascotSticker(asset: AppAssets.stickerLove, size: 84),
-                      const SizedBox(width: 16),
-                      Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: AppGradients.of(context),
-                          boxShadow:
-                              AppShadows.glow(theme.colorScheme.tertiary),
+                  // Composición simétrica: los dos perfiles arriba y el
+                  // sticker de conexión centrado abajo, entre ambos.
+                  SizedBox(
+                    height: 170,
+                    child: Stack(
+                      alignment: Alignment.topCenter,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _avatarRing(
+                              context,
+                              name: me?.name,
+                              photoUrl: me?.photoUrl,
+                            ),
+                            _avatarRing(
+                              context,
+                              name: candidate.profile.name,
+                              photoUrl: candidate.profile.photoUrl,
+                            ),
+                          ],
                         ),
-                        child: ProfileAvatar(
-                          name: candidate.profile.name,
-                          photoUrl: candidate.profile.photoUrl,
-                          radius: 44,
+                        const Positioned(
+                          bottom: 0,
+                          child: MascotSticker(
+                            asset: AppAssets.stickerLove,
+                            size: 96,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 16),
                   ShaderMask(

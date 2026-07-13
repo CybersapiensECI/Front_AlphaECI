@@ -132,10 +132,22 @@ abstract final class AppCategoryStyles {
     // Categorías de eventos universitarios.
     'TECH': (Icons.memory_outlined, Color(0xFF5D95D1)),
     'BIENESTAR': (Icons.spa_outlined, Color(0xFF2F9E9E)),
+    // Categorías del catálogo de intereses (profile-service).
+    'TECNOLOGÍA': (Icons.memory_outlined, Color(0xFF5D95D1)),
+    'ENTRETENIMIENTO': (Icons.sports_esports_outlined, Color(0xFF7C5CD6)),
   };
 
   static (IconData, Color) of(String? category) =>
       _styles[category?.toUpperCase()] ?? _fallback;
+
+  /// Etiqueta legible y uniforme para chips/filtros: la API usa MAYÚSCULAS
+  /// (DEPORTE, TECH) pero en UI siempre va Title case (Deporte, Tech).
+  static String labelOf(String? category) {
+    final c = category?.trim();
+    if (c == null || c.isEmpty) return '';
+    final lower = c.toLowerCase();
+    return lower[0].toUpperCase() + lower.substring(1);
+  }
 }
 
 abstract final class AppShadows {

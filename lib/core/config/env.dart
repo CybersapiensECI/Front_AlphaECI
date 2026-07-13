@@ -47,12 +47,6 @@ abstract final class Env {
   static const geoUrl =
       String.fromEnvironment('GEO_URL', defaultValue: gatewayUrl);
 
-  // TODO(gateway): la ruta /api/gamification/** del gateway usa
-  // StripPrefix=1 pero GamificationService sirve /api/v1/gamification/**
-  // — vía gateway hoy da 404. Igual /api/estadisticas/** vs
-  // /api/v1/metrics/**, y parches declara /api/v1/parches/** pero el
-  // backend sirve /api/parches/** (y faltan /api/invitations,
-  // /api/posts). Corregir en AlphaGateway/application.yml.
   static const gamificationUrl =
       String.fromEnvironment('GAMIFICATION_URL', defaultValue: gatewayUrl);
 
@@ -62,12 +56,9 @@ abstract final class Env {
   static const parchesUrl =
       String.fromEnvironment('PARCHES_URL', defaultValue: gatewayUrl);
 
-  /// WebSocket del chat (STOMP /ws-chat). El gateway NO rutea este WS
-  /// (solo tiene /ws-location de geo), así que va DIRECTO al despliegue
-  /// de chat-service. TODO(gateway): agregar ruta wss para /ws-chat.
-  static const chatWsUrl = String.fromEnvironment(
-    'CHAT_WS_URL',
-    defaultValue:
-        'https://chat-service-prod.gentlebeach-15ecf803.eastus.azurecontainerapps.io',
-  );
+  /// WebSocket del chat (STOMP/SockJS /ws-chat). El gateway ya rutea
+  /// /ws-chat/** hacia chat-service, así que por defecto va vía gateway.
+  /// Override directo al servicio si hiciera falta: --dart-define=CHAT_WS_URL=...
+  static const chatWsUrl =
+      String.fromEnvironment('CHAT_WS_URL', defaultValue: gatewayUrl);
 }

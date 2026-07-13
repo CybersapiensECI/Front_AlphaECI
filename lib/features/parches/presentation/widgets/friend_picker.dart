@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_assets.dart';
-import '../../../../core/theme/design_tokens.dart';
+import '../../../../core/widgets/app_sheet.dart';
 import '../../../../core/widgets/mascot.dart';
 import '../../../matching/presentation/providers/matching_provider.dart';
 import '../../../profile/presentation/widgets/profile_avatar.dart';
@@ -13,11 +13,9 @@ Future<List<String>?> showFriendPicker(
   BuildContext context, {
   String title = 'Invitar amistades',
 }) {
-  return showModalBottomSheet<List<String>>(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (_) => _FriendPickerSheet(title: title),
+  return showAppSheet<List<String>>(
+    context,
+    child: _FriendPickerSheet(title: title),
   );
 }
 
@@ -39,40 +37,13 @@ class _FriendPickerSheetState extends ConsumerState<_FriendPickerSheet> {
     final theme = Theme.of(context);
     final friends = ref.watch(friendsProvider);
 
-    return Container(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.7,
-      ),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(AppRadii.xl),
-        ),
-        border: Border.all(
-          color: theme.colorScheme.outline.withValues(alpha: 0.2),
-        ),
-      ),
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-      child: SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+    // Contenedor/alto/handle: AppSheet (estándar 2/3 de pantalla).
+    return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.outline.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
             Text(widget.title, style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
-            Flexible(
+            Expanded(
               child: friends.when(
                 loading: () => const Padding(
                   padding: EdgeInsets.all(32),
@@ -130,8 +101,6 @@ class _FriendPickerSheetState extends ConsumerState<_FriendPickerSheet> {
                   : 'Invitar (${_selected.length})'),
             ),
           ],
-        ),
-      ),
     );
   }
 }

@@ -77,7 +77,7 @@ class FeedScreen extends ConsumerWidget {
               const SizedBox(width: 8),
               for (final c in kParcheCategories) ...[
                 InterestChip(
-                  label: c,
+                  label: AppCategoryStyles.labelOf(c),
                   selected: category == c,
                   accent: AppCategoryStyles.of(c).$2,
                   onTap: () =>
