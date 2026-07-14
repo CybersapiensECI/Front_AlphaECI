@@ -19,8 +19,9 @@ class StatsRepositoryImpl implements StatsRepository {
   @override
   Future<Result<PersonalStats>> getPersonalStats(String userId) async {
     try {
-      final response = await _dio
-          .get<Map<String, dynamic>>('/api/v1/metrics/user/$userId');
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/api/v1/metrics/user/$userId',
+      );
       return Success(_fromJson(response.data ?? const {}));
     } on DioException catch (e) {
       return Error(mapDioError(e));
@@ -44,27 +45,23 @@ class StatsRepositoryImpl implements StatsRepository {
                   (gamification['totalMonasUnlocked'] as num?)?.toInt() ?? 0,
               monasInProgress:
                   (gamification['monasInProgress'] as num?)?.toInt() ?? 0,
-              monasLocked:
-                  (gamification['monasLocked'] as num?)?.toInt() ?? 0,
+              monasLocked: (gamification['monasLocked'] as num?)?.toInt() ?? 0,
               completionPercentage:
-                  (gamification['completionPercentage'] as num?)
-                          ?.toDouble() ??
-                      0,
+                  (gamification['completionPercentage'] as num?)?.toDouble() ??
+                  0,
             ),
       events: events == null
           ? null
           : EventStats(
               totalAttended: (events['totalAttended'] as num?)?.toInt() ?? 0,
-              upcomingEvents:
-                  (events['upcomingEvents'] as num?)?.toInt() ?? 0,
+              upcomingEvents: (events['upcomingEvents'] as num?)?.toInt() ?? 0,
               totalEvents: (events['totalEvents'] as num?)?.toInt() ?? 0,
             ),
       parches: parches == null
           ? null
           : ParcheStats(
               totalJoined: (parches['totalJoined'] as num?)?.toInt() ?? 0,
-              activeParches:
-                  (parches['activeParches'] as num?)?.toInt() ?? 0,
+              activeParches: (parches['activeParches'] as num?)?.toInt() ?? 0,
             ),
       profile: profile == null
           ? null
@@ -87,26 +84,31 @@ class MockStatsRepository implements StatsRepository {
   Future<Result<PersonalStats>> getPersonalStats(String userId) {
     return Future.delayed(
       const Duration(milliseconds: 450),
-      () => Success(PersonalStats(
-        userId: userId,
-        gamification: const GamificationStats(
-          totalXp: 340,
-          totalMonasUnlocked: 3,
-          monasInProgress: 2,
-          monasLocked: 2,
-          completionPercentage: 42.8,
+      () => Success(
+        PersonalStats(
+          userId: userId,
+          gamification: const GamificationStats(
+            totalXp: 340,
+            totalMonasUnlocked: 3,
+            monasInProgress: 2,
+            monasLocked: 2,
+            completionPercentage: 42.8,
+          ),
+          events: const EventStats(
+            totalAttended: 5,
+            upcomingEvents: 1,
+            totalEvents: 6,
+          ),
+          parches: const ParcheStats(totalJoined: 4, activeParches: 1),
+          profile: const ProfileStats(
+            xp: 340,
+            level: 4,
+            isActive: true,
+            career: 'SYSTEMS_ENGINEERING',
+            semester: 4,
+          ),
         ),
-        events: const EventStats(
-            totalAttended: 5, upcomingEvents: 1, totalEvents: 6),
-        parches: const ParcheStats(totalJoined: 4, activeParches: 1),
-        profile: const ProfileStats(
-          xp: 340,
-          level: 4,
-          isActive: true,
-          career: 'SYSTEMS_ENGINEERING',
-          semester: 4,
-        ),
-      )),
+      ),
     );
   }
 }

@@ -6,9 +6,9 @@ import '../theme/design_tokens.dart';
 import 'adaptive_scaffold.dart' show AdaptiveDestination;
 
 /// Barra de navegación inferior FIJA (ancho completo, espacio propio,
-/// nunca se superpone al contenido). Cada ítem: ícono con píldora de
-/// selección + label centrado debajo, siempre visible. Sin expansión
-/// horizontal: con 6 destinos no hay overflow en pantallas de 360dp.
+/// nunca se superpone al contenido). Solo íconos por defecto: el
+/// seleccionado se expande en una píldora que revela su nombre, para no
+/// saturar la vista con seis labels a la vez.
 class AnimatedBottomNav extends StatelessWidget {
   const AnimatedBottomNav({
     super.key,
@@ -35,9 +35,7 @@ class AnimatedBottomNav extends StatelessWidget {
             // Más opaco que las cards glass: legibilidad ante todo.
             color: scheme.surface.withValues(alpha: 0.92),
             border: Border(
-              top: BorderSide(
-                color: scheme.outline.withValues(alpha: 0.25),
-              ),
+              top: BorderSide(color: scheme.outline.withValues(alpha: 0.25)),
             ),
           ),
           child: SafeArea(
@@ -45,14 +43,13 @@ class AnimatedBottomNav extends StatelessWidget {
             child: SizedBox(
               height: 64,
               child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   for (var i = 0; i < destinations.length; i++)
-                    Expanded(
-                      child: _NavItem(
-                        destination: destinations[i],
-                        selected: i == selectedIndex,
-                        onTap: () => onDestinationSelected(i),
-                      ),
+                    _NavItem(
+                      destination: destinations[i],
+                      selected: i == selectedIndex,
+                      onTap: () => onDestinationSelected(i),
                     ),
                 ],
               ),
@@ -78,43 +75,50 @@ class _NavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final color = selected ? scheme.primary : scheme.onSurfaceVariant;
 
     return InkWell(
+      borderRadius: BorderRadius.circular(AppRadii.lg),
       onTap: onTap,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Píldora solo detrás del ícono: nunca crece a lo ancho.
-          AnimatedContainer(
-            duration: AppDurations.base,
-            curve: AppCurves.enter,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 3),
-            decoration: BoxDecoration(
-              gradient: selected ? AppGradients.buttonOf(context) : null,
-              borderRadius: BorderRadius.circular(AppRadii.lg),
-            ),
-            child: Icon(
-              selected ? destination.selectedIcon : destination.icon,
-              size: 22,
-              color: selected ? Colors.white : scheme.onSurfaceVariant,
-            ),
+      // AnimatedSize hace que el ancho crezca/encoja con fluidez cuando
+      // el label aparece o desaparece del ítem seleccionado.
+      child: AnimatedSize(
+        duration: AppDurations.base,
+        curve: AppCurves.enter,
+        child: AnimatedContainer(
+          duration: AppDurations.base,
+          curve: AppCurves.enter,
+          padding: EdgeInsets.symmetric(
+            horizontal: selected ? 16 : 12,
+            vertical: 10,
           ),
-          const SizedBox(height: 3),
-          // Label centrado bajo el ícono, siempre visible y legible.
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              destination.label,
-              maxLines: 1,
-              style: TextStyle(
-                fontSize: 10.5,
-                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                color: color,
+          decoration: BoxDecoration(
+            gradient: selected ? AppGradients.buttonOf(context) : null,
+            borderRadius: BorderRadius.circular(AppRadii.lg),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                selected ? destination.selectedIcon : destination.icon,
+                size: 22,
+                color: selected ? Colors.white : scheme.onSurfaceVariant,
               ),
-            ),
+              if (selected) ...[
+                const SizedBox(width: 8),
+                Text(
+                  destination.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

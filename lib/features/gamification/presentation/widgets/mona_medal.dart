@@ -42,8 +42,12 @@ class MonaMedal extends StatelessWidget {
         : Image.asset(
             imageAsset,
             fit: BoxFit.contain,
+            // srcATop respeta el alfa real del PNG: solo tiñe los píxeles
+            // visibles de la medalla. BlendMode.darken rellena también el
+            // rectángulo transparente de alrededor — se veía como un
+            // fondo cuadrado antinatural.
             color: locked ? Colors.black.withValues(alpha: 0.55) : null,
-            colorBlendMode: locked ? BlendMode.darken : null,
+            colorBlendMode: locked ? BlendMode.srcATop : null,
             errorBuilder: (context, error, stack) => Icon(
               locked ? Icons.lock_rounded : fallbackIcon,
               size: iconSize,
