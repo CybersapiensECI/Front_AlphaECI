@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 import 'animations.dart';
 
@@ -47,7 +48,22 @@ class InterestChip extends StatelessWidget {
             color: selected ? Colors.white : scheme.onSurface,
           ),
         ),
-      ),
+      )
+          // Pop al seleccionarse (target-driven: no re-anima en rebuilds).
+          .animate(target: selected ? 1 : 0)
+          .scale(
+            begin: const Offset(1, 1),
+            end: const Offset(1.07, 1.07),
+            duration: 130.ms,
+            curve: Curves.easeOut,
+          )
+          .then()
+          .scale(
+            begin: const Offset(1, 1),
+            end: const Offset(1 / 1.07, 1 / 1.07),
+            duration: 180.ms,
+            curve: Curves.easeIn,
+          ),
     );
   }
 }

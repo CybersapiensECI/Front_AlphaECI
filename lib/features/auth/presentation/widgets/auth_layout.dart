@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/widgets/glass_card.dart';
@@ -29,6 +30,7 @@ class AuthLayout extends StatelessWidget {
             padding: const EdgeInsets.all(AppSpacing.lg),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 420),
+              // Entrada de la tarjeta completa: sube con fade.
               child: GlassCard(
                 padding: const EdgeInsets.all(AppSpacing.xl),
                 radius: AppRadii.xl,
@@ -36,10 +38,18 @@ class AuthLayout extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Logo oficial (lobo + escudo, sin fondo).
-                    const Hero(
+                    // Logo oficial (lobo + escudo, sin fondo) con
+                    // entrada elástica.
+                    Hero(
                       tag: 'app-logo',
-                      child: BrandLogo(size: 120),
+                      child: const BrandLogo(size: 120)
+                          .animate()
+                          .scale(
+                            begin: const Offset(0.6, 0.6),
+                            duration: 600.ms,
+                            curve: Curves.elasticOut,
+                          )
+                          .fadeIn(duration: 250.ms),
                     ),
                     const SizedBox(height: AppSpacing.md),
                     // Título con gradiente.
@@ -65,7 +75,10 @@ class AuthLayout extends StatelessWidget {
                     child,
                   ],
                 ),
-              ),
+              )
+                  .animate()
+                  .fadeIn(duration: 350.ms, curve: Curves.easeOut)
+                  .slideY(begin: 0.06, duration: 450.ms, curve: Curves.easeOutCubic),
             ),
           ),
         ),

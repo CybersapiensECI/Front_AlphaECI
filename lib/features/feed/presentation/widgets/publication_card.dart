@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -205,19 +206,29 @@ class PublicationCard extends ConsumerWidget {
                   onTap: () => _toggleLike(context, ref),
                   child: Padding(
                     padding: const EdgeInsets.all(8),
-                    child: AnimatedSwitcher(
-                      duration: AppDurations.fast,
-                      transitionBuilder: (child, animation) =>
-                          ScaleTransition(scale: animation, child: child),
-                      child: Icon(
-                        liked ? Icons.favorite : Icons.favorite_border,
-                        key: ValueKey(liked),
-                        size: 22,
-                        color: liked
-                            ? _likeColor
-                            : theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
+                    // Burst al dar like: pop + sacudida (estilo Instagram).
+                    child: Icon(
+                      liked ? Icons.favorite : Icons.favorite_border,
+                      size: 22,
+                      color: liked
+                          ? _likeColor
+                          : theme.colorScheme.onSurfaceVariant,
+                    )
+                        .animate(target: liked ? 1 : 0)
+                        .scale(
+                          begin: const Offset(1, 1),
+                          end: const Offset(1.35, 1.35),
+                          duration: 160.ms,
+                          curve: Curves.easeOut,
+                        )
+                        .then()
+                        .scale(
+                          begin: const Offset(1, 1),
+                          end: const Offset(1 / 1.35, 1 / 1.35),
+                          duration: 220.ms,
+                          curve: Curves.elasticOut,
+                        )
+                        .shake(hz: 5, rotation: 0.06, duration: 300.ms),
                   ),
                 ),
                 BouncyTap(

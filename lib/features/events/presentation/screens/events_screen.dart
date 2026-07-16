@@ -18,14 +18,14 @@ import '../providers/event_provider.dart';
 class EventsScreen extends ConsumerWidget {
   const EventsScreen({super.key});
 
-  // TODO(backend): confirmar categorías reales sembradas en EventService.
-  static const _categories = ['TECH', 'BIENESTAR', 'DEPORTE', 'CULTURA'];
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final events = ref.watch(eventsProvider);
     final agenda = ref.watch(myAgendaProvider).valueOrNull ?? const <String>{};
     final selectedCategory = ref.watch(eventCategoryProvider);
+    // Chips derivados de los datos reales (sin catálogo en el back).
+    final categories =
+        ref.watch(eventCategoriesProvider).valueOrNull ?? const <String>[];
 
     return Column(
       children: [
@@ -43,7 +43,7 @@ class EventsScreen extends ConsumerWidget {
                     ref.read(eventCategoryProvider.notifier).state = null,
               ),
               const SizedBox(width: 8),
-              for (final category in _categories) ...[
+              for (final category in categories) ...[
                 InterestChip(
                   label: AppCategoryStyles.labelOf(category),
                   selected: selectedCategory == category,

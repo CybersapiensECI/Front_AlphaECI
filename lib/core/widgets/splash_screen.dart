@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 import '../theme/design_tokens.dart';
 import 'gradient_scaffold.dart';
@@ -15,9 +16,26 @@ class SplashScreen extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Hero(
+            // Logo: brillo periódico (interno, loop) + entrada elástica
+            // (externa, una vez).
+            Hero(
               tag: 'app-logo',
-              child: BrandLogo(size: 96),
+              child: const BrandLogo(size: 96)
+                  .animate(
+                    onPlay: (controller) => controller.repeat(),
+                  )
+                  .shimmer(
+                    delay: 1200.ms,
+                    duration: 1100.ms,
+                    color: Colors.white.withValues(alpha: 0.35),
+                  )
+                  .animate()
+                  .scale(
+                    begin: const Offset(0.6, 0.6),
+                    duration: 650.ms,
+                    curve: Curves.elasticOut,
+                  )
+                  .fadeIn(duration: 250.ms),
             ),
             const SizedBox(height: AppSpacing.md),
             ShaderMask(

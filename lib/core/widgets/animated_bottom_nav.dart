@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 import '../theme/design_tokens.dart';
 import 'adaptive_scaffold.dart' show AdaptiveDestination;
@@ -98,11 +99,26 @@ class _NavItem extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // Pop del ícono al quedar seleccionado.
               Icon(
                 selected ? destination.selectedIcon : destination.icon,
                 size: 22,
                 color: selected ? Colors.white : scheme.onSurfaceVariant,
-              ),
+              )
+                  .animate(target: selected ? 1 : 0)
+                  .scale(
+                    begin: const Offset(1, 1),
+                    end: const Offset(1.18, 1.18),
+                    duration: 140.ms,
+                    curve: Curves.easeOut,
+                  )
+                  .then()
+                  .scale(
+                    begin: const Offset(1, 1),
+                    end: const Offset(1 / 1.18, 1 / 1.18),
+                    duration: 220.ms,
+                    curve: Curves.elasticOut,
+                  ),
               if (selected) ...[
                 const SizedBox(width: 8),
                 Text(

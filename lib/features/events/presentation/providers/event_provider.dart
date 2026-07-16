@@ -23,6 +23,24 @@ final eventRepositoryProvider = Provider<EventRepository>((ref) {
 /// Filtro de categoría (null = todas).
 final eventCategoryProvider = StateProvider<String?>((_) => null);
 
+/// Categorías DERIVADAS de los eventos reales. EventService no define
+/// enum de categorías (String libre): los chips de filtro salen de los
+/// datos que llegan, no de una lista inventada en el front.
+final eventCategoriesProvider = FutureProvider<List<String>>((ref) async {
+  final result = await ref.watch(eventRepositoryProvider).getEvents();
+  return result.when(
+    success: (events) {
+      final unique = <String>{
+        for (final event in events)
+          if (event.category?.trim().isNotEmpty == true)
+            event.category!.trim(),
+      };
+      return unique.toList()..sort();
+    },
+    error: (failure) => throw failure,
+  );
+});
+
 final eventsProvider = FutureProvider<List<UniversityEvent>>((ref) async {
   final category = ref.watch(eventCategoryProvider);
   final result =
