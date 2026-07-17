@@ -44,6 +44,22 @@ class ProfileApiService {
     await _dio.delete<void>('$_base/$userId/tags/$tagId');
   }
 
+  Future<UserProfile> addSchedule(String userId, Schedule schedule) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '$_base/$userId/schedules',
+      data: scheduleToJson(schedule),
+    );
+    return userProfileFromJson(response.data!);
+  }
+
+  Future<UserProfile> removeSchedule(String userId, Schedule schedule) async {
+    final response = await _dio.delete<Map<String, dynamic>>(
+      '$_base/$userId/schedules',
+      data: scheduleToJson(schedule),
+    );
+    return userProfileFromJson(response.data!);
+  }
+
   Future<List<ProfileSummary>> getBatch(List<String> ids) async {
     final response = await _dio.post<List<dynamic>>(
       '$_base/batch',

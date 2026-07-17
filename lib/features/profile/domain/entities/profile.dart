@@ -11,6 +11,24 @@ class Tag extends Equatable {
   List<Object?> get props => [id, name];
 }
 
+/// Bloque de disponibilidad horaria (POST/DELETE /users/{id}/schedules).
+class Schedule extends Equatable {
+  const Schedule({
+    required this.dayOfWeek,
+    required this.name,
+    required this.startTime,
+    required this.endTime,
+  });
+
+  final String dayOfWeek;
+  final String name;
+  final String startTime;
+  final String endTime;
+
+  @override
+  List<Object?> get props => [dayOfWeek, name, startTime, endTime];
+}
+
 /// Categoría del catálogo de tags (GET /api/v1/users/tags).
 class TagCategory extends Equatable {
   const TagCategory({required this.id, required this.name, required this.tags});
@@ -37,6 +55,7 @@ class UserProfile extends Equatable {
     this.photoUrl,
     this.privacyLevel,
     this.tags = const [],
+    this.schedules = const [],
     this.xp = 0,
     this.level = 1,
     this.friendsId = const [],
@@ -53,6 +72,7 @@ class UserProfile extends Equatable {
   final String? photoUrl;
   final String? privacyLevel;
   final List<Tag> tags;
+  final List<Schedule> schedules;
   final int xp;
   final int level;
   final List<String> friendsId;
@@ -63,8 +83,18 @@ class UserProfile extends Equatable {
   double get levelProgress => (xp % 100) / 100;
 
   @override
-  List<Object?> get props =>
-      [id, name, career, semester, biography, photoUrl, tags, xp, level];
+  List<Object?> get props => [
+        id,
+        name,
+        career,
+        semester,
+        biography,
+        photoUrl,
+        tags,
+        schedules,
+        xp,
+        level,
+      ];
 }
 
 /// Perfil resumido (POST /api/v1/users/batch) — para cards de discovery.

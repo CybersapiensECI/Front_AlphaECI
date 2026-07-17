@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/errors/failures.dart';
 import '../../../../core/router/routes.dart';
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/theme/theme_provider.dart';
 import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/animations.dart';
 import '../../../../core/widgets/async_value_view.dart';
+import '../../../auth/presentation/widgets/incomplete_registration_view.dart';
 import '../../domain/entities/profile.dart';
 import '../providers/profile_provider.dart';
 import '../widgets/profile_avatar.dart';
@@ -22,6 +24,9 @@ class ProfileScreen extends ConsumerWidget {
     return AsyncValueView<UserProfile>(
       value: profile,
       onRetry: () => ref.invalidate(myProfileProvider),
+      errorBuilder: (failure) => failure is NotFoundFailure
+          ? const IncompleteRegistrationView()
+          : null,
       data: (p) => _ProfileBody(profile: p),
     );
   }

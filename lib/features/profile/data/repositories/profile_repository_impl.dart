@@ -54,6 +54,16 @@ class ProfileRepositoryImpl implements ProfileRepository {
   }
 
   @override
+  Future<Result<UserProfile>> addSchedule(String userId, Schedule schedule) {
+    return _guard(() => _api.addSchedule(userId, schedule));
+  }
+
+  @override
+  Future<Result<UserProfile>> removeSchedule(String userId, Schedule schedule) {
+    return _guard(() => _api.removeSchedule(userId, schedule));
+  }
+
+  @override
   Future<Result<List<ProfileSummary>>> getProfilesByIds(List<String> ids) {
     if (ids.isEmpty) return Future.value(const Success([]));
     return _guard(() => _api.getBatch(ids));

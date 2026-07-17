@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../core/errors/failures.dart';
+import '../../../../core/router/routes.dart';
 import '../../../../core/theme/app_assets.dart';
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/widgets/animations.dart';
@@ -12,6 +15,7 @@ import '../../../../core/widgets/glass_card.dart';
 import '../../../../core/widgets/mascot.dart';
 import '../../../auth/presentation/widgets/auth_layout.dart'
     show showAppSnackBar;
+import '../../../auth/presentation/widgets/incomplete_registration_view.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 import '../../../profile/presentation/widgets/profile_avatar.dart';
 import '../../domain/entities/match.dart';
@@ -42,7 +46,35 @@ class _DiscoveryScreenState extends ConsumerState<DiscoveryScreen> {
               context, 'Solicitud enviada a ${candidate.profile.name} 🚀', AppAssets.stickerCool);
         }
       },
-      error: (failure) => showAppSnackBar(context, failure.message),
+      error: _handleMatchError,
+    );
+  }
+
+  /// Traduce mensajes crudos de matching-service (en inglés, ej. "You
+  /// can't match without any available schedules!") y guía al usuario a
+  /// completar el dato que falta en vez de mostrar el error tal cual.
+  void _handleMatchError(Failure failure) {
+    final raw = failure.message;
+    var message = raw;
+    var guideToProfile = false;
+    if (raw.contains('without any tags')) {
+      message = 'Agrega al menos un interés a tu perfil para poder conectar.';
+      guideToProfile = true;
+    } else if (raw.contains('without any available schedules')) {
+      message =
+          'Agrega tu horario de disponibilidad en tu perfil para poder conectar.';
+      guideToProfile = true;
+    } else if (raw.contains('already your friend')) {
+      message = 'Ya estás conectado con esta persona.';
+    } else if (raw.contains('match request to yourself')) {
+      message = 'No puedes conectar contigo mismo.';
+    }
+    showAppSnackBar(
+      context,
+      message,
+      actionLabel: guideToProfile ? 'Editar perfil' : null,
+      onAction:
+          guideToProfile ? () => context.push(Routes.editProfile) : null,
     );
   }
 
@@ -67,12 +99,23 @@ class _DiscoveryScreenState extends ConsumerState<DiscoveryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Si nunca se terminó el registro (perfil 404 en profile-service), no
+    // tiene sentido pedirle recomendaciones a matching-service: guiar
+    // directo a terminar el registro en vez de mostrar un error crudo.
+    final myProfile = ref.watch(myProfileProvider);
+    if (myProfile.hasError && myProfile.error is NotFoundFailure) {
+      return const IncompleteRegistrationView();
+    }
+
     final deck = ref.watch(discoveryProvider);
     final theme = Theme.of(context);
 
     return AsyncValueView<List<DiscoveryCandidate>>(
       value: deck,
       onRetry: () => ref.invalidate(discoveryProvider),
+      errorBuilder: (failure) => failure is NotFoundFailure
+          ? const IncompleteRegistrationView()
+          : null,
       data: (candidates) {
         if (candidates.isEmpty) {
           return Column(

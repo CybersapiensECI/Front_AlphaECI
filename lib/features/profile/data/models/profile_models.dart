@@ -17,6 +17,20 @@ TagCategory tagCategoryFromJson(Map<String, dynamic> json) => TagCategory(
       ],
     );
 
+Schedule scheduleFromJson(Map<String, dynamic> json) => Schedule(
+      dayOfWeek: json['dayOfWeek'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      startTime: json['startTime'] as String? ?? '',
+      endTime: json['endTime'] as String? ?? '',
+    );
+
+Map<String, dynamic> scheduleToJson(Schedule s) => {
+      'dayOfWeek': s.dayOfWeek,
+      'name': s.name,
+      'startTime': s.startTime,
+      'endTime': s.endTime,
+    };
+
 UserProfile userProfileFromJson(Map<String, dynamic> json) => UserProfile(
       id: json['id'] as String,
       name: json['name'] as String? ?? '',
@@ -30,6 +44,10 @@ UserProfile userProfileFromJson(Map<String, dynamic> json) => UserProfile(
       tags: [
         for (final t in (json['tags'] as List? ?? const []))
           tagFromJson(t as Map<String, dynamic>),
+      ],
+      schedules: [
+        for (final s in (json['schedules'] as List? ?? const []))
+          scheduleFromJson(s as Map<String, dynamic>),
       ],
       xp: (json['xp'] as num?)?.toInt() ?? 0,
       level: (json['level'] as num?)?.toInt() ?? 1,

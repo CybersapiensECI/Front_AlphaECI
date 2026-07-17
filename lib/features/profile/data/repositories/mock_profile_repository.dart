@@ -50,6 +50,14 @@ class MockProfileRepository implements ProfileRepository {
     biography: 'Explorando AlphaECI en modo demo 🚀',
     privacyLevel: 'PUBLIC',
     tags: [_tags[2], _tags[1], _tags[4]],
+    schedules: const [
+      Schedule(
+        dayOfWeek: 'MONDAY',
+        name: 'Cálculo diferencial',
+        startTime: '08:00',
+        endTime: '10:00',
+      ),
+    ],
     xp: 340,
     level: 4,
     friendsId: ['u2', 'u4'],
@@ -81,6 +89,7 @@ class MockProfileRepository implements ProfileRepository {
       biography: biography ?? _me.biography,
       privacyLevel: privacyLevel ?? _me.privacyLevel,
       tags: _me.tags,
+      schedules: _me.schedules,
       xp: _me.xp,
       level: _me.level,
       friendsId: _me.friendsId,
@@ -115,6 +124,7 @@ class MockProfileRepository implements ProfileRepository {
         biography: _me.biography,
         privacyLevel: _me.privacyLevel,
         tags: [..._me.tags, tag],
+        schedules: _me.schedules,
         xp: _me.xp,
         level: _me.level,
         friendsId: _me.friendsId,
@@ -135,11 +145,52 @@ class MockProfileRepository implements ProfileRepository {
       biography: _me.biography,
       privacyLevel: _me.privacyLevel,
       tags: [..._me.tags.where((t) => t.id != tagId)],
+      schedules: _me.schedules,
       xp: _me.xp,
       level: _me.level,
       friendsId: _me.friendsId,
     );
     return _ok(null);
+  }
+
+  @override
+  Future<Result<UserProfile>> addSchedule(String userId, Schedule schedule) {
+    _me = UserProfile(
+      id: _me.id,
+      name: _me.name,
+      gender: _me.gender,
+      userType: _me.userType,
+      career: _me.career,
+      semester: _me.semester,
+      biography: _me.biography,
+      privacyLevel: _me.privacyLevel,
+      tags: _me.tags,
+      schedules: [..._me.schedules, schedule],
+      xp: _me.xp,
+      level: _me.level,
+      friendsId: _me.friendsId,
+    );
+    return _ok(_me);
+  }
+
+  @override
+  Future<Result<UserProfile>> removeSchedule(String userId, Schedule schedule) {
+    _me = UserProfile(
+      id: _me.id,
+      name: _me.name,
+      gender: _me.gender,
+      userType: _me.userType,
+      career: _me.career,
+      semester: _me.semester,
+      biography: _me.biography,
+      privacyLevel: _me.privacyLevel,
+      tags: _me.tags,
+      schedules: [..._me.schedules.where((s) => s != schedule)],
+      xp: _me.xp,
+      level: _me.level,
+      friendsId: _me.friendsId,
+    );
+    return _ok(_me);
   }
 
   @override

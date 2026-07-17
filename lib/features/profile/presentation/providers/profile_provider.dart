@@ -94,4 +94,24 @@ class ProfileActions {
     if (result.isSuccess) _ref.invalidate(myProfileProvider);
     return result;
   }
+
+  Future<Result<UserProfile>> addSchedule(Schedule schedule) async {
+    final userId = _userId;
+    if (userId == null) return const Error(AuthFailure());
+    final result = await _ref
+        .read(profileRepositoryProvider)
+        .addSchedule(userId, schedule);
+    if (result.isSuccess) _ref.invalidate(myProfileProvider);
+    return result;
+  }
+
+  Future<Result<UserProfile>> removeSchedule(Schedule schedule) async {
+    final userId = _userId;
+    if (userId == null) return const Error(AuthFailure());
+    final result = await _ref
+        .read(profileRepositoryProvider)
+        .removeSchedule(userId, schedule);
+    if (result.isSuccess) _ref.invalidate(myProfileProvider);
+    return result;
+  }
 }

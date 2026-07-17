@@ -164,6 +164,17 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         onChanged: (v) => setState(() => _privacy = v),
                       ),
                       const SizedBox(height: 24),
+                      Text('Mi horario', style: theme.textTheme.titleMedium),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Agrega tus bloques de clase u ocupación: se usan '
+                        'para calcular afinidad y son necesarios para '
+                        'poder conectar con otras personas.',
+                        style: theme.textTheme.bodySmall,
+                      ),
+                      const SizedBox(height: 12),
+                      _ScheduleEditor(profile: p),
+                      const SizedBox(height: 24),
                       Text('Intereses', style: theme.textTheme.titleMedium),
                       const SizedBox(height: 4),
                       Text(
@@ -244,6 +255,224 @@ class _TagSelector extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
         ],
+      ],
+    );
+  }
+}
+
+const _dayLabels = {
+  'MONDAY': 'Lunes',
+  'TUESDAY': 'Martes',
+  'WEDNESDAY': 'Miércoles',
+  'THURSDAY': 'Jueves',
+  'FRIDAY': 'Viernes',
+  'SATURDAY': 'Sábado',
+  'SUNDAY': 'Domingo',
+};
+const _dayOrder = [
+  'MONDAY',
+  'TUESDAY',
+  'WEDNESDAY',
+  'THURSDAY',
+  'FRIDAY',
+  'SATURDAY',
+  'SUNDAY',
+];
+
+/// Lista de bloques de disponibilidad + alta/baja (POST/DELETE /schedules).
+/// Requerido por matching-service para poder conectar con otras personas.
+class _ScheduleEditor extends ConsumerStatefulWidget {
+  const _ScheduleEditor({required this.profile});
+
+  final UserProfile profile;
+
+  @override
+  ConsumerState<_ScheduleEditor> createState() => _ScheduleEditorState();
+}
+
+class _ScheduleEditorState extends ConsumerState<_ScheduleEditor> {
+  bool _busy = false;
+
+  Future<void> _remove(Schedule schedule) async {
+    setState(() => _busy = true);
+    final result =
+        await ref.read(profileActionsProvider).removeSchedule(schedule);
+    if (!mounted) return;
+    setState(() => _busy = false);
+    final failure = result.failureOrNull;
+    if (failure != null) showAppSnackBar(context, failure.message);
+  }
+
+  Future<void> _openAddDialog() async {
+    final schedule = await showDialog<Schedule>(
+      context: context,
+      builder: (_) => const _AddScheduleDialog(),
+    );
+    if (schedule == null || !mounted) return;
+    setState(() => _busy = true);
+    final result =
+        await ref.read(profileActionsProvider).addSchedule(schedule);
+    if (!mounted) return;
+    setState(() => _busy = false);
+    final failure = result.failureOrNull;
+    if (failure != null) showAppSnackBar(context, failure.message);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final schedules = [...widget.profile.schedules]..sort((a, b) {
+        final dayCmp =
+            _dayOrder.indexOf(a.dayOfWeek).compareTo(_dayOrder.indexOf(b.dayOfWeek));
+        return dayCmp != 0 ? dayCmp : a.startTime.compareTo(b.startTime);
+      });
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (schedules.isEmpty)
+          Text(
+            'Aún no tienes horario registrado.',
+            style: theme.textTheme.bodySmall,
+          )
+        else
+          Card(
+            margin: EdgeInsets.zero,
+            child: Column(
+              children: [
+                for (final s in schedules) ...[
+                  ListTile(
+                    dense: true,
+                    leading: const Icon(Icons.schedule_outlined),
+                    title: Text(s.name),
+                    subtitle: Text(
+                      '${_dayLabels[s.dayOfWeek] ?? s.dayOfWeek} · '
+                      '${s.startTime} - ${s.endTime}',
+                    ),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete_outline),
+                      onPressed: _busy ? null : () => _remove(s),
+                    ),
+                  ),
+                  if (s != schedules.last) const Divider(height: 1),
+                ],
+              ],
+            ),
+          ),
+        const SizedBox(height: 8),
+        OutlinedButton.icon(
+          onPressed: _busy ? null : _openAddDialog,
+          icon: const Icon(Icons.add),
+          label: const Text('Agregar horario'),
+        ),
+      ],
+    );
+  }
+}
+
+class _AddScheduleDialog extends StatefulWidget {
+  const _AddScheduleDialog();
+
+  @override
+  State<_AddScheduleDialog> createState() => _AddScheduleDialogState();
+}
+
+class _AddScheduleDialogState extends State<_AddScheduleDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _name = TextEditingController();
+  String _day = 'MONDAY';
+  TimeOfDay _start = const TimeOfDay(hour: 8, minute: 0);
+  TimeOfDay _end = const TimeOfDay(hour: 10, minute: 0);
+
+  @override
+  void dispose() {
+    _name.dispose();
+    super.dispose();
+  }
+
+  String _fmt(TimeOfDay t) =>
+      '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+
+  Future<void> _pickStart() async {
+    final picked = await showTimePicker(context: context, initialTime: _start);
+    if (picked != null) setState(() => _start = picked);
+  }
+
+  Future<void> _pickEnd() async {
+    final picked = await showTimePicker(context: context, initialTime: _end);
+    if (picked != null) setState(() => _end = picked);
+  }
+
+  void _submit() {
+    if (!_formKey.currentState!.validate()) return;
+    final startMinutes = _start.hour * 60 + _start.minute;
+    final endMinutes = _end.hour * 60 + _end.minute;
+    if (endMinutes <= startMinutes) {
+      showAppSnackBar(context, 'La hora final debe ser después de la inicial.');
+      return;
+    }
+    Navigator.of(context).pop(
+      Schedule(
+        dayOfWeek: _day,
+        name: _name.text.trim(),
+        startTime: _fmt(_start),
+        endTime: _fmt(_end),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Agregar horario'),
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            AppTextField(
+              label: 'Nombre (ej. Cálculo diferencial)',
+              controller: _name,
+              validator: (v) => Validators.required(v, 'El nombre'),
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              initialValue: _day,
+              decoration: const InputDecoration(labelText: 'Día'),
+              items: [
+                for (final d in _dayOrder)
+                  DropdownMenuItem(value: d, child: Text(_dayLabels[d]!)),
+              ],
+              onChanged: (v) => setState(() => _day = v ?? _day),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _pickStart,
+                    child: Text('Desde ${_fmt(_start)}'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _pickEnd,
+                    child: Text('Hasta ${_fmt(_end)}'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(onPressed: _submit, child: const Text('Agregar')),
       ],
     );
   }

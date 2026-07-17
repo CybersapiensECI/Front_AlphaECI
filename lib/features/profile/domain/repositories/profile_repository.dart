@@ -26,6 +26,12 @@ abstract interface class ProfileRepository {
   /// DELETE /{userId}/tags/{tagId}.
   Future<Result<void>> removeTag(String userId, String tagId);
 
+  /// POST /{userId}/schedules — agrega bloque de disponibilidad.
+  Future<Result<UserProfile>> addSchedule(String userId, Schedule schedule);
+
+  /// DELETE /{userId}/schedules — quita bloque de disponibilidad.
+  Future<Result<UserProfile>> removeSchedule(String userId, Schedule schedule);
+
   /// POST /batch {ids} — perfiles resumidos para cards.
   Future<Result<List<ProfileSummary>>> getProfilesByIds(List<String> ids);
 }
