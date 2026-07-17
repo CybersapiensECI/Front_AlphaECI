@@ -28,10 +28,16 @@ Future<void> showCommentsSheet(
 }
 
 /// Nombres de los autores de los comentarios visibles, resueltos en batch.
+/// Family key: ids ordenados y unidos con ",". Usar `List` de String como
+/// key no sirve — Dart compara listas por identidad, no por valor, así que cada
+/// rebuild (nueva lista con el mismo contenido) creaba una entrada de
+/// family distinta: el provider nunca llegaba a cachear ni a resolver a
+/// tiempo, y el nombre se quedaba en el fallback "Estudiante ECI" siempre.
 final _commentAuthorsProvider =
-    FutureProvider.family<Map<String, ProfileSummary>, List<String>>(
-        (ref, authorIds) async {
-  if (authorIds.isEmpty) return const {};
+    FutureProvider.family<Map<String, ProfileSummary>, String>(
+        (ref, authorIdsKey) async {
+  if (authorIdsKey.isEmpty) return const {};
+  final authorIds = authorIdsKey.split(',');
   final result =
       await ref.watch(profileRepositoryProvider).getProfilesByIds(authorIds);
   return result.when(
@@ -92,9 +98,11 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
         if (ad == null || bd == null) return 0;
         return ad.compareTo(bd);
       });
-    final authorIds = {for (final c in comments) c.authorId}.toList();
+    final authorIdsKey = ({for (final c in comments) c.authorId}.toList()
+          ..sort())
+        .join(',');
     final authors =
-        ref.watch(_commentAuthorsProvider(authorIds)).valueOrNull ??
+        ref.watch(_commentAuthorsProvider(authorIdsKey)).valueOrNull ??
             const <String, ProfileSummary>{};
 
     // Contenedor/alto/handle: los pone AppSheet (estándar de la app).

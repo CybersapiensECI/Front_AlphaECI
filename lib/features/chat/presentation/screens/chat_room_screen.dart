@@ -44,8 +44,9 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
     '✨', '🤓', '🙏', '🫶',
   ];
 
-  // TODO(backend): confirmar convención de sala grupal en chat-service;
-  // por ahora la sala del parche usa su id.
+  // Confirmado con backend: la sala grupal de un parche usa el propio
+  // parche.id como chatRoomId (chat-service la crea así al consumir
+  // parche.created, ver CreateParcheRoomUseCaseImpl).
   String get _roomId =>
       widget.conversation?.connection.chatRoomId ?? widget.parche!.id;
 
