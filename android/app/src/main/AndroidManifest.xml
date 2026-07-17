@@ -10,6 +10,8 @@
     <!-- Ubicación GPS: "Mi zona del campus" (ver mi posición y la de mis amigos). -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <!-- Push de eventos nuevos (Android 13+ pide este permiso en runtime). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <application
         android:label="AlphaECI"
         android:name="${applicationName}"

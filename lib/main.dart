@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app.dart';
 import 'core/config/env.dart';
+import 'core/push/push_notifications.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -17,6 +18,7 @@ void main() async {
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
       );
+      await initPushNotifications();
     } catch (e) {
       debugPrint('Firebase no inicializado (¿falta flutterfire configure?): $e');
     }
