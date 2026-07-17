@@ -1,0 +1,55 @@
+name: alphafront
+description: "Frontend Flutter de AlphaECI — app de matching social ECI."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+
+  # State management + inyección de dependencias
+  flutter_riverpod: ^2.6.1
+  # Cliente HTTP + interceptores
+  dio: ^5.7.0
+  # Routing declarativo con guards
+  go_router: ^14.6.2
+  # Almacenamiento seguro de tokens JWT
+  flutter_secure_storage: ^9.2.2
+  # Igualdad por valor en entidades
+  equatable: ^2.0.7
+  # Formato de fechas
+  intl: ^0.19.0
+  # WebSocket STOMP para chat en tiempo real (chat-service /ws-chat)
+  stomp_dart_client: ^2.0.0
+  # Tipografía de marca (Montserrat titulares + Inter cuerpo)
+  google_fonts: ^6.2.1
+  # Mapa del campus (OpenStreetMap, sin API key) para geolocalización
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+  # Fotos de galería/cámara en publicaciones
+  image_picker: ^1.1.2
+  # Storage para subir esas fotos y obtener URL pública (sin back propio)
+  firebase_core: ^3.8.0
+  firebase_storage: ^12.3.7
+  # Microanimaciones declarativas (entradas, pops, shimmer) sin boilerplate
+  flutter_animate: ^4.5.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/brand/
+    - assets/stickers/
+    - assets/monas/
