@@ -32,6 +32,8 @@ dependencies:
   # Mapa del campus (OpenStreetMap, sin API key) para geolocalización
   flutter_map: ^7.0.2
   latlong2: ^0.9.1
+  # GPS del dispositivo (permisos + posición) para "Mi zona del campus"
+  geolocator: ^13.0.2
   # Fotos de galería/cámara en publicaciones
   image_picker: ^1.1.2
   # Storage para subir esas fotos y obtener URL pública (sin back propio)

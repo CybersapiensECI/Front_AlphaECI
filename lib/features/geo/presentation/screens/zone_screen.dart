@@ -10,6 +10,7 @@ import '../../../../core/network/api_client.dart';
 import '../../../../core/router/routes.dart';
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/utils/breakpoints.dart';
+import '../../../matching/presentation/providers/matching_provider.dart';
 import '../../../parches/domain/entities/parche.dart';
 import '../../../parches/presentation/providers/parche_provider.dart';
 import '../../../../core/widgets/animations.dart';
@@ -18,6 +19,7 @@ import '../../../../core/widgets/gradient_scaffold.dart';
 import '../../../auth/presentation/widgets/auth_layout.dart'
     show showAppSnackBar;
 import '../../data/zone_repository.dart';
+import '../providers/location_provider.dart';
 
 final zoneRepositoryProvider = Provider<ZoneRepository>((ref) {
   if (Env.demoMode) return MockZoneRepository();
@@ -36,15 +38,26 @@ final myZoneProvider = FutureProvider<CampusZone?>((ref) async {
       success: (zone) => zone, error: (failure) => throw failure);
 });
 
-/// Zonas del campus. Coordenadas SOLO visuales de front: el backend maneja
-/// zonas como strings, sin coordenadas — si GeoService las agrega, migrar.
+/// Zonas del campus (Escuela Colombiana de Ingeniería Julio Garavito).
+/// Coordenadas reales tomadas de Google Maps — ver
+/// GeoService/MONAS_GEOLOCALIZACION.md. Claves = valores reales del enum
+/// `CampusZone` de GeoService, deben coincidir exactos con GET /api/zone/catalog.
 const Map<String, LatLng> _zoneCoordinates = {
-  'ZONA_NORTE': LatLng(4.7838, -74.0417),
-  'ZONA_SUR': LatLng(4.7814, -74.0429),
-  'BIBLIOTECA': LatLng(4.7828, -74.0422),
-  'CAFETERIA_CENTRAL': LatLng(4.7823, -74.0430),
-  'EDIFICIO_D': LatLng(4.7831, -74.0435),
-  'CANCHAS': LatLng(4.7819, -74.0410),
+  'EDIFICIO_A': LatLng(4.782699855684707, -74.04264918379),
+  'EDIFICIO_B': LatLng(4.7830399485075255, -74.04270964402168),
+  'EDIFICIO_C': LatLng(4.782389074571274, -74.04247753949225),
+  'EDIFICIO_D': LatLng(4.783130774183006, -74.04354547558216),
+  'EDIFICIO_E': LatLng(4.782681035143461, -74.04385407917442),
+  'EDIFICIO_F': LatLng(4.783590080825507, -74.04332219644444),
+  'EDIFICIO_G': LatLng(4.78349313377599, -74.04288042271563),
+  'EDIFICIO_H': LatLng(4.781775204352766, -74.04493800488173),
+  'EDIFICIO_I': LatLng(4.781918241337216, -74.04435269456233),
+  'CAFETERIA_REGIO': LatLng(4.782980848558539, -74.04400996864427),
+  'CAFETERIA_2': LatLng(4.78323330585694, -74.0446541217452),
+  'CAFETERIA_3': LatLng(4.783855976183257, -74.04583457286611),
+  'CAFETERIA_4': LatLng(4.7823632440346735, -74.04299435757378),
+  'LAGO': LatLng(4.783042637971193, -74.04428261122634),
+  'REFLEXION': LatLng(4.78303796045251, -74.04448109469203),
 };
 
 /// Zona del campus: selección manual (geolocalización simplificada, M13).
@@ -86,6 +99,23 @@ class _ZoneScreenState extends ConsumerState<ZoneScreen> {
     final myZone = ref.watch(myZoneProvider);
     final theme = Theme.of(context);
 
+    final gpsSharing = ref.watch(gpsSharingProvider);
+    final friends = ref.watch(friendsProvider).valueOrNull ?? const [];
+    final friendIds = {for (final f in friends) f.profile.id};
+    final peerLocations =
+        ref.watch(peerLocationsProvider).valueOrNull ?? const {};
+    final friendPositions = {
+      for (final entry in peerLocations.entries)
+        if (friendIds.contains(entry.key)) entry.key: entry.value,
+    };
+    final friendNames = {for (final f in friends) f.profile.id: f.profile.name};
+
+    ref.listen(gpsSharingProvider, (previous, next) {
+      next.whenOrNull(
+        error: (error, _) => showAppSnackBar(context, error.toString()),
+      );
+    });
+
     // Preseleccionar zona actual.
     myZone.whenData((zone) {
       if (!_initialized && zone != null) {
@@ -113,7 +143,7 @@ class _ZoneScreenState extends ConsumerState<ZoneScreen> {
                 ),
                 const SizedBox(height: 16),
                 // ── Mapa del campus (Escuela Julio Garavito) ──
-                // Muestra zonas + parches activos según su lugar.
+                // Muestra zonas + parches activos + mi GPS + amigos conectados.
                 catalog.when(
                   loading: () => const SizedBox.shrink(),
                   error: (e, _) => const SizedBox.shrink(),
@@ -124,15 +154,36 @@ class _ZoneScreenState extends ConsumerState<ZoneScreen> {
                     selected: _selected,
                     enabled: _enabled,
                     onZoneTap: (zone) => setState(() => _selected = zone),
+                    myPosition: gpsSharing.valueOrNull,
+                    friendPositions: friendPositions,
+                    friendNames: friendNames,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Los pines de colores son parches activos: tócalos para '
-                  'ver el plan.',
+                  'ver el plan. El pin azul sos vos, los verdes son amigos '
+                  'compartiendo su ubicación.',
                   style: theme.textTheme.bodySmall,
                 ),
                 const SizedBox(height: 16),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Ver mi ubicación GPS'),
+                  subtitle: Text(
+                    'Muestra tu posición real y la de tus amigos conectados',
+                    style: theme.textTheme.bodySmall,
+                  ),
+                  value: gpsSharing.valueOrNull != null,
+                  onChanged: (v) {
+                    if (v) {
+                      ref.read(gpsSharingProvider.notifier).start();
+                    } else {
+                      ref.read(gpsSharingProvider.notifier).stop();
+                    }
+                  },
+                ),
+                const SizedBox(height: 8),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
                   title: const Text('Compartir mi zona'),
@@ -220,6 +271,9 @@ class _CampusMap extends StatelessWidget {
     required this.selected,
     required this.enabled,
     required this.onZoneTap,
+    this.myPosition,
+    this.friendPositions = const {},
+    this.friendNames = const {},
   });
 
   final List<String> zones;
@@ -227,6 +281,9 @@ class _CampusMap extends StatelessWidget {
   final String? selected;
   final bool enabled;
   final ValueChanged<String> onZoneTap;
+  final LatLng? myPosition;
+  final Map<String, LatLng> friendPositions;
+  final Map<String, String> friendNames;
 
   @override
   Widget build(BuildContext context) {
@@ -281,6 +338,29 @@ class _CampusMap extends StatelessWidget {
                         height: 40,
                         child: _ParcheMarker(parche: parche),
                       ),
+                  // Amigos compartiendo su ubicación GPS en vivo.
+                  for (final entry in friendPositions.entries)
+                    Marker(
+                      point: entry.value,
+                      width: 40,
+                      height: 40,
+                      child: _PersonMarker(
+                        label: friendNames[entry.key] ?? 'Amigo',
+                        color: Colors.green,
+                      ),
+                    ),
+                  // Mi posición GPS en vivo.
+                  if (myPosition != null)
+                    Marker(
+                      point: myPosition!,
+                      width: 44,
+                      height: 44,
+                      child: const _PersonMarker(
+                        label: 'Yo',
+                        color: Colors.blue,
+                        isMe: true,
+                      ),
+                    ),
                 ],
               ),
               // Atribución obligatoria OSM.
@@ -289,6 +369,39 @@ class _CampusMap extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Pin de posición GPS en vivo: la mía o la de un amigo conectado.
+class _PersonMarker extends StatelessWidget {
+  const _PersonMarker({
+    required this.label,
+    required this.color,
+    this.isMe = false,
+  });
+
+  final String label;
+  final Color color;
+  final bool isMe;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: label,
+      child: Container(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: color,
+          border: Border.all(color: Colors.white, width: 2),
+          boxShadow: AppShadows.glow(color),
+        ),
+        child: Icon(
+          isMe ? Icons.my_location : Icons.person,
+          size: 18,
+          color: Colors.white,
         ),
       ),
     );

@@ -30,6 +30,8 @@
 	<string>AlphaECI necesita acceso a tus fotos para adjuntarlas a tus publicaciones.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>AlphaECI necesita la cámara para tomar fotos de tus publicaciones.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>AlphaECI necesita tu ubicación para mostrarte tu zona del campus y a tus amigos conectados cerca.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
