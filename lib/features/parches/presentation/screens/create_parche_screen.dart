@@ -17,9 +17,9 @@ import '../../../profile/presentation/widgets/profile_avatar.dart';
 import '../providers/parche_provider.dart';
 import 'parches_screen.dart' show kParcheCategories;
 
-/// Crear parche — espejo de CreateParcheCommand.
-/// TODO(backend): confirmar valores válidos de los enums Places y
-/// ParcheCategory; por ahora se envían como texto libre.
+/// Crear parche — espejo de CreateParcheCommand. `place` y `category`
+/// envían el código real del enum del backend; el dropdown solo muestra
+/// una etiqueta bonita (ver `placeLabelOf` / `AppCategoryStyles.labelOf`).
 class CreateParcheScreen extends ConsumerStatefulWidget {
   const CreateParcheScreen({super.key});
 
@@ -158,7 +158,10 @@ class _CreateParcheScreenState extends ConsumerState<CreateParcheScreen> {
                     ),
                     items: [
                       for (final place in campusPlaces.keys)
-                        DropdownMenuItem(value: place, child: Text(place)),
+                        DropdownMenuItem(
+                          value: place,
+                          child: Text(placeLabelOf(place)),
+                        ),
                     ],
                     onChanged: (v) => setState(() => _place = v),
                   ),
