@@ -8,12 +8,33 @@ ParcheMember parcheMemberFromJson(Map<String, dynamic> json) => ParcheMember(
       unionDate: _tryDate(json['unionDate']),
     );
 
+PostComment postCommentFromJson(Map<String, dynamic> json) => PostComment(
+      id: json['id'] as String? ?? '',
+      authorId: json['authorId'] as String? ?? '',
+      text: json['text'] as String? ?? '',
+      createdAt: _tryDate(json['createdAt']),
+    );
+
+PostReaction postReactionFromJson(Map<String, dynamic> json) => PostReaction(
+      id: json['id'] as String? ?? '',
+      studentId: json['studentId'] as String? ?? '',
+      createdAt: _tryDate(json['createdAt']),
+    );
+
 ParchePost parchePostFromJson(Map<String, dynamic> json) => ParchePost(
       id: json['id'] as String? ?? '',
       authorId: json['authorId'] as String? ?? '',
       text: json['text'] as String?,
       photoUrl: json['photoUrl'] as String?,
       createdAt: _tryDate(json['createdAt']),
+      comments: [
+        for (final c in (json['comments'] as List? ?? const []))
+          postCommentFromJson(c as Map<String, dynamic>),
+      ],
+      reactions: [
+        for (final r in (json['reactions'] as List? ?? const []))
+          postReactionFromJson(r as Map<String, dynamic>),
+      ],
     );
 
 Parche parcheFromJson(Map<String, dynamic> json) => Parche(

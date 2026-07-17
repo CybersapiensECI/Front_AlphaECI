@@ -87,6 +87,17 @@ class MockParcheRepository implements ParcheRepository {
         text: 'Ya reservé la cancha para el viernes 🔥 Nos vemos 4pm.',
         photoUrl: 'https://picsum.photos/seed/eci-cancha/900/540',
         createdAt: DateTime.now().subtract(const Duration(hours: 5)),
+        reactions: [
+          PostReaction(id: 'r1', studentId: 'u5'),
+        ],
+        comments: [
+          PostComment(
+            id: 'c1',
+            authorId: 'u3',
+            text: 'Cuenten conmigo para el arco 🧤',
+            createdAt: DateTime.now().subtract(const Duration(hours: 4)),
+          ),
+        ],
       ),
       ParchePost(
         id: 'post3',
@@ -101,6 +112,14 @@ class MockParcheRepository implements ParcheRepository {
         authorId: 'u4',
         text: 'Confirmen quiénes vienen para reservar la sala 👇',
         createdAt: DateTime.now().subtract(const Duration(hours: 3)),
+        comments: [
+          PostComment(
+            id: 'c2',
+            authorId: 'u2',
+            text: 'Yo voy, aparto puesto 👋',
+            createdAt: DateTime.now().subtract(const Duration(hours: 2)),
+          ),
+        ],
       ),
     ],
     'p3': [
@@ -118,6 +137,23 @@ class MockParcheRepository implements ParcheRepository {
         text: 'El plan de hoy pinta brutal 🎬🍿 ¿Quién más viene?',
         photoUrl: 'https://picsum.photos/seed/eci-cine/900/540',
         createdAt: DateTime.now().subtract(const Duration(minutes: 40)),
+        reactions: [
+          PostReaction(id: 'r2', studentId: 'u5'),
+        ],
+        comments: [
+          PostComment(
+            id: 'c3',
+            authorId: 'u2',
+            text: '¡Confirmadísimo! 🙌',
+            createdAt: DateTime.now().subtract(const Duration(minutes: 32)),
+          ),
+          PostComment(
+            id: 'c4',
+            authorId: 'u4',
+            text: 'Llevo crispetas para todos 🍿',
+            createdAt: DateTime.now().subtract(const Duration(minutes: 18)),
+          ),
+        ],
       ),
     ],
   };
@@ -234,15 +270,70 @@ class MockParcheRepository implements ParcheRepository {
     required String postId,
     required String authorId,
     required String text,
-  }) =>
-      _ok('Comentario creado (demo).');
+  }) {
+    _updatePost(postId, (post) => ParchePost(
+          id: post.id,
+          authorId: post.authorId,
+          text: post.text,
+          photoUrl: post.photoUrl,
+          createdAt: post.createdAt,
+          reactions: post.reactions,
+          comments: [
+            ...post.comments,
+            PostComment(
+              id: 'c${_nextId++}',
+              authorId: authorId,
+              text: text,
+              createdAt: DateTime.now(),
+            ),
+          ],
+        ));
+    return _ok('Comentario creado (demo).');
+  }
 
   @override
   Future<Result<String>> reactToPost({
     required String postId,
     required String studentId,
-  }) =>
-      _ok('Reacción procesada (demo).');
+  }) {
+    _updatePost(postId, (post) {
+      final already = post.reactions.any((r) => r.studentId == studentId);
+      return ParchePost(
+        id: post.id,
+        authorId: post.authorId,
+        text: post.text,
+        photoUrl: post.photoUrl,
+        createdAt: post.createdAt,
+        comments: post.comments,
+        reactions: already
+            ? [...post.reactions.where((r) => r.studentId != studentId)]
+            : [
+                ...post.reactions,
+                PostReaction(
+                  id: 'r${_nextId++}',
+                  studentId: studentId,
+                  createdAt: DateTime.now(),
+                ),
+              ],
+      );
+    });
+    return _ok('Reacción procesada (demo).');
+  }
+
+  /// Reemplaza el post con [postId] (en el parche que sea) por el
+  /// resultado de aplicarle [update], sin tocar el resto de la lista.
+  void _updatePost(
+    String postId,
+    ParchePost Function(ParchePost post) update,
+  ) {
+    for (final entry in _posts.entries) {
+      final index = entry.value.indexWhere((p) => p.id == postId);
+      if (index >= 0) {
+        entry.value[index] = update(entry.value[index]);
+        return;
+      }
+    }
+  }
 
   @override
   Future<Result<String>> createPost({

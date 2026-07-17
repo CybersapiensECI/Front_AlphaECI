@@ -343,12 +343,23 @@ class _ParcheDetailScreenState extends ConsumerState<ParcheDetailScreen> {
                                             children: [
                                               IconButton(
                                                 tooltip: 'Me gusta',
-                                                icon: const Icon(
-                                                    Icons.favorite_border,
-                                                    size: 20),
+                                                icon: Icon(
+                                                  post.likedBy(
+                                                          session.userId)
+                                                      ? Icons.favorite
+                                                      : Icons.favorite_border,
+                                                  size: 20,
+                                                  color: post.likedBy(
+                                                          session.userId)
+                                                      ? Colors.redAccent
+                                                      : null,
+                                                ),
                                                 onPressed: () =>
                                                     _react(post.id),
                                               ),
+                                              if (post.reactions.isNotEmpty)
+                                                Text(
+                                                    '${post.reactions.length}'),
                                               IconButton(
                                                 tooltip: 'Comentar',
                                                 icon: const Icon(
@@ -358,6 +369,9 @@ class _ParcheDetailScreenState extends ConsumerState<ParcheDetailScreen> {
                                                 onPressed: () =>
                                                     _comment(post.id),
                                               ),
+                                              if (post.comments.isNotEmpty)
+                                                Text(
+                                                    '${post.comments.length}'),
                                             ],
                                           )
                                         : null,

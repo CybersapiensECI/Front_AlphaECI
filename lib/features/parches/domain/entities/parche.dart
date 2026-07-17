@@ -18,6 +18,40 @@ class ParcheMember extends Equatable {
   List<Object?> get props => [studentId, role];
 }
 
+/// Comentario de una publicación (espejo del domain Comment).
+class PostComment extends Equatable {
+  const PostComment({
+    required this.id,
+    required this.authorId,
+    required this.text,
+    this.createdAt,
+  });
+
+  final String id;
+  final String authorId;
+  final String text;
+  final DateTime? createdAt;
+
+  @override
+  List<Object?> get props => [id, authorId, text];
+}
+
+/// Reacción ("me gusta") a una publicación o comentario (espejo de Reaction).
+class PostReaction extends Equatable {
+  const PostReaction({
+    required this.id,
+    required this.studentId,
+    this.createdAt,
+  });
+
+  final String id;
+  final String studentId;
+  final DateTime? createdAt;
+
+  @override
+  List<Object?> get props => [id, studentId];
+}
+
 /// Publicación dentro de un parche.
 class ParchePost extends Equatable {
   const ParchePost({
@@ -26,6 +60,8 @@ class ParchePost extends Equatable {
     this.text,
     this.photoUrl,
     this.createdAt,
+    this.comments = const [],
+    this.reactions = const [],
   });
 
   final String id;
@@ -33,9 +69,15 @@ class ParchePost extends Equatable {
   final String? text;
   final String? photoUrl;
   final DateTime? createdAt;
+  final List<PostComment> comments;
+  final List<PostReaction> reactions;
+
+  bool likedBy(String? userId) =>
+      userId != null && reactions.any((r) => r.studentId == userId);
 
   @override
-  List<Object?> get props => [id, authorId, text, photoUrl];
+  List<Object?> get props =>
+      [id, authorId, text, photoUrl, comments, reactions];
 }
 
 /// Plan grupal (espejo del domain Parche de Parches-Service).

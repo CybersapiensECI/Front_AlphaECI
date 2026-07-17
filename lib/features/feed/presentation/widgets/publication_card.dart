@@ -7,9 +7,9 @@ import '../../../../core/router/routes.dart';
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/widgets/animations.dart';
 import '../../../../core/widgets/image_viewer.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/presentation/widgets/auth_layout.dart'
     show showAppSnackBar;
-import '../../../parches/presentation/providers/comments_provider.dart';
 import '../../../parches/presentation/providers/parche_provider.dart';
 import '../../../parches/presentation/widgets/comments_sheet.dart';
 import '../../../profile/presentation/widgets/profile_avatar.dart';
@@ -27,24 +27,15 @@ class PublicationCard extends ConsumerWidget {
   static const _likeColor = Color(0xFFD95E5E);
 
   Future<void> _toggleLike(BuildContext context, WidgetRef ref) async {
-    final postId = publication.post.id;
-    final liked = ref.read(likedPostsProvider);
-    final wasLiked = liked.contains(postId);
-    // Optimista: pinta ya, revierte si el backend falla.
-    ref.read(likedPostsProvider.notifier).state = wasLiked
-        ? ({...liked}..remove(postId))
-        : {...liked, postId};
-
+    // parcheActionsProvider.react ya invalida parchePostsProvider, que
+    // publicationsProvider watchea: el corazón se actualiza solo al
+    // llegar el refetch (ver feed_provider.dart).
     final result = await ref
         .read(parcheActionsProvider)
-        .react(publication.parche.id, postId);
+        .react(publication.parche.id, publication.post.id);
     if (!context.mounted) return;
     final failure = result.failureOrNull;
-    if (failure != null) {
-      ref.read(likedPostsProvider.notifier).state =
-          wasLiked ? {...liked, postId} : ({...liked}..remove(postId));
-      showAppSnackBar(context, failure.message);
-    }
+    if (failure != null) showAppSnackBar(context, failure.message);
   }
 
   /// Abre el sheet de comentarios (lista + campo para comentar).
@@ -62,10 +53,9 @@ class PublicationCard extends ConsumerWidget {
     final author = publication.author;
     final (categoryIcon, categoryColor) =
         AppCategoryStyles.of(parche.category);
-    final liked = ref.watch(likedPostsProvider).contains(post.id);
-    final commentCount = ref.watch(
-      postCommentsProvider.select((map) => map[post.id]?.length ?? 0),
-    );
+    final session = ref.watch(authControllerProvider).session;
+    final liked = post.likedBy(session?.userId);
+    final commentCount = post.comments.length;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 14),

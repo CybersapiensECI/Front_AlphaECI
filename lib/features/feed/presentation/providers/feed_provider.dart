@@ -23,13 +23,14 @@ class FeedPublication {
 /// Filtro de categoría del feed principal (null = todas).
 final feedCategoryProvider = StateProvider<String?>((_) => null);
 
-/// Likes dados en esta sesión (optimista).
-/// TODO(backend): GET de posts no expone contadores de reacciones ni
-/// comentarios; cuando existan, reemplazar este estado local.
-final likedPostsProvider = StateProvider<Set<String>>((_) => <String>{});
-
 /// Feed principal: agrega las publicaciones de todos los parches visibles,
 /// resuelve autores en batch y ordena por fecha descendente.
+///
+/// Usa parchePostsProvider (no repo.getPosts directo) a propósito: al
+/// watchear ese provider por cada parche, dar like/comentar en cualquier
+/// pantalla (que invalida parchePostsProvider(parcheId)) también invalida
+/// este feed automáticamente — sin eso, el feed quedaba con datos viejos
+/// hasta reiniciar la app.
 final publicationsProvider =
     FutureProvider<List<FeedPublication>>((ref) async {
   final repo = ref.watch(parcheRepositoryProvider);
@@ -47,21 +48,20 @@ final publicationsProvider =
   ];
 
   // Posts de cada parche en paralelo. Un parche que falle no tumba el feed.
-  final postsResults =
-      await Future.wait([for (final p in visible) repo.getPosts(p.id)]);
+  final postsLists = await Future.wait([
+    for (final p in visible)
+      ref
+          .watch(parchePostsProvider(p.id).future)
+          .catchError((_) => const <ParchePost>[]),
+  ]);
 
   final items = <FeedPublication>[];
   final authorIds = <String>{};
   for (var i = 0; i < visible.length; i++) {
-    postsResults[i].when(
-      success: (posts) {
-        for (final post in posts) {
-          items.add(FeedPublication(post: post, parche: visible[i]));
-          authorIds.add(post.authorId);
-        }
-      },
-      error: (_) {},
-    );
+    for (final post in postsLists[i]) {
+      items.add(FeedPublication(post: post, parche: visible[i]));
+      authorIds.add(post.authorId);
+    }
   }
 
   // Autores en batch (foto + nombre). Si falla, el feed sale sin autor.

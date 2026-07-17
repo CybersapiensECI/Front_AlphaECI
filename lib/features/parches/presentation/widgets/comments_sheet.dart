@@ -8,12 +8,14 @@ import '../../../../core/widgets/animations.dart';
 import '../../../../core/widgets/mascot.dart';
 import '../../../auth/presentation/widgets/auth_layout.dart'
     show showAppSnackBar;
+import '../../../profile/domain/entities/profile.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
-import '../providers/comments_provider.dart';
+import '../../domain/entities/parche.dart';
 import '../providers/parche_provider.dart';
 
 /// Sheet de comentarios estilo Instagram: primero la lista de comentarios
-/// de la publicación, con el campo para comentar fijo abajo.
+/// de la publicación, con el campo para comentar fijo abajo. La lista viene
+/// de parchePostsProvider (backend real) — nunca de estado local.
 Future<void> showCommentsSheet(
   BuildContext context, {
   required String parcheId,
@@ -24,6 +26,19 @@ Future<void> showCommentsSheet(
     child: _CommentsSheet(parcheId: parcheId, postId: postId),
   );
 }
+
+/// Nombres de los autores de los comentarios visibles, resueltos en batch.
+final _commentAuthorsProvider =
+    FutureProvider.family<Map<String, ProfileSummary>, List<String>>(
+        (ref, authorIds) async {
+  if (authorIds.isEmpty) return const {};
+  final result =
+      await ref.watch(profileRepositoryProvider).getProfilesByIds(authorIds);
+  return result.when(
+    success: (list) => {for (final p in list) p.id: p},
+    error: (_) => const {},
+  );
+});
 
 class _CommentsSheet extends ConsumerStatefulWidget {
   const _CommentsSheet({required this.parcheId, required this.postId});
@@ -55,25 +70,9 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
     if (!mounted) return;
     setState(() => _sending = false);
     result.when(
-      success: (_) {
-        _input.clear();
-        // Optimista: se ve al instante (el back aún no expone GET).
-        final myName = ref
-                .read(myProfileProvider)
-                .valueOrNull
-                ?.name ??
-            'Tú';
-        final map = {...ref.read(postCommentsProvider)};
-        map[widget.postId] = [
-          ...map[widget.postId] ?? const <PostComment>[],
-          PostComment(
-            author: myName,
-            text: text,
-            createdAt: DateTime.now(),
-          ),
-        ];
-        ref.read(postCommentsProvider.notifier).state = map;
-      },
+      // parcheActionsProvider.comment ya invalida parchePostsProvider:
+      // el comentario aparece solo cuando llegue el refetch.
+      success: (_) => _input.clear(),
       error: (failure) => showAppSnackBar(context, failure.message),
     );
   }
@@ -82,11 +81,21 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final comments = ref.watch(
-      postCommentsProvider.select(
-        (map) => map[widget.postId] ?? const <PostComment>[],
-      ),
-    );
+    final posts = ref.watch(parchePostsProvider(widget.parcheId));
+    final post = (posts.valueOrNull ?? const <ParchePost>[])
+        .where((p) => p.id == widget.postId)
+        .firstOrNull;
+    final comments = [...post?.comments ?? const <PostComment>[]]
+      ..sort((a, b) {
+        final ad = a.createdAt;
+        final bd = b.createdAt;
+        if (ad == null || bd == null) return 0;
+        return ad.compareTo(bd);
+      });
+    final authorIds = {for (final c in comments) c.authorId}.toList();
+    final authors =
+        ref.watch(_commentAuthorsProvider(authorIds)).valueOrNull ??
+            const <String, ProfileSummary>{};
 
     // Contenedor/alto/handle: los pone AppSheet (estándar de la app).
     return Column(
@@ -101,80 +110,86 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
             const SizedBox(height: 8),
             // ── Lista de comentarios (llena los 2/3 de alto) ──
             Expanded(
-              child: comments.isEmpty
-                  ? const Center(
-                      child: MascotEmptyState(
-                        asset: AppAssets.stickerHello,
-                        message:
-                            'Aún no hay comentarios.\n¡Sé quien rompa el hielo!',
-                      ),
-                    )
-                  : ListView.builder(
-                      itemCount: comments.length,
-                      itemBuilder: (context, index) {
-                        final comment = comments[index];
-                        return FadeSlideIn(
-                          delay: Duration(milliseconds: 30 * index),
-                          child: Padding(
-                            padding:
-                                const EdgeInsets.symmetric(vertical: 8),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                CircleAvatar(
-                                  radius: 16,
-                                  backgroundColor: scheme.tertiary
-                                      .withValues(alpha: 0.25),
-                                  child: Text(
-                                    comment.author.isNotEmpty
-                                        ? comment.author[0].toUpperCase()
-                                        : '?',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w700,
-                                      color: scheme.primary,
+              child: posts.isLoading && comments.isEmpty
+                  ? const Center(child: CircularProgressIndicator())
+                  : comments.isEmpty
+                      ? const Center(
+                          child: MascotEmptyState(
+                            asset: AppAssets.stickerHello,
+                            message:
+                                'Aún no hay comentarios.\n¡Sé quien rompa el hielo!',
+                          ),
+                        )
+                      : ListView.builder(
+                          itemCount: comments.length,
+                          itemBuilder: (context, index) {
+                            final comment = comments[index];
+                            final authorName =
+                                authors[comment.authorId]?.name ??
+                                    'Estudiante ECI';
+                            return FadeSlideIn(
+                              delay: Duration(milliseconds: 30 * index),
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 8),
+                                child: Row(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 16,
+                                      backgroundColor: scheme.tertiary
+                                          .withValues(alpha: 0.25),
+                                      child: Text(
+                                        authorName.isNotEmpty
+                                            ? authorName[0].toUpperCase()
+                                            : '?',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w700,
+                                          color: scheme.primary,
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
-                                          Flexible(
-                                            child: Text(
-                                              comment.author,
-                                              overflow:
-                                                  TextOverflow.ellipsis,
-                                              style: theme
-                                                  .textTheme.labelLarge,
-                                            ),
+                                          Row(
+                                            children: [
+                                              Flexible(
+                                                child: Text(
+                                                  authorName,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: theme
+                                                      .textTheme.labelLarge,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                _timeAgo(comment.createdAt),
+                                                style: theme
+                                                    .textTheme.bodySmall,
+                                              ),
+                                            ],
                                           ),
-                                          const SizedBox(width: 8),
+                                          const SizedBox(height: 2),
                                           Text(
-                                            _timeAgo(comment.createdAt),
-                                            style:
-                                                theme.textTheme.bodySmall,
+                                            comment.text,
+                                            style: theme.textTheme.bodyMedium,
                                           ),
                                         ],
                                       ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        comment.text,
-                                        style: theme.textTheme.bodyMedium,
-                                      ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
+                              ),
+                            );
+                          },
+                        ),
             ),
             const Divider(height: 20),
             // ── Escribir comentario ──────────────────────────
@@ -222,7 +237,8 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
   }
 }
 
-String _timeAgo(DateTime date) {
+String _timeAgo(DateTime? date) {
+  if (date == null) return '';
   final diff = DateTime.now().difference(date);
   if (diff.inMinutes < 1) return 'ahora';
   if (diff.inHours < 1) return 'hace ${diff.inMinutes} min';
