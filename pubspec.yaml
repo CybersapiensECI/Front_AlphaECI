@@ -37,6 +37,8 @@ dependencies:
   # Storage para subir esas fotos y obtener URL pública (sin back propio)
   firebase_core: ^3.8.0
   firebase_storage: ^12.3.7
+  # Microanimaciones declarativas (entradas, pops, shimmer) sin boilerplate
+  flutter_animate: ^4.5.2
 
 dev_dependencies:
   flutter_test:

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_assets.dart';
@@ -373,24 +374,48 @@ class _MatchOverlay extends ConsumerWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            // Cada perfil entra deslizando desde su lado.
                             _avatarRing(
                               context,
                               name: me?.name,
                               photoUrl: me?.photoUrl,
-                            ),
+                            )
+                                .animate()
+                                .slideX(
+                                  begin: -0.8,
+                                  duration: 450.ms,
+                                  curve: Curves.easeOutCubic,
+                                )
+                                .fadeIn(duration: 250.ms),
                             _avatarRing(
                               context,
                               name: candidate.profile.name,
                               photoUrl: candidate.profile.photoUrl,
-                            ),
+                            )
+                                .animate()
+                                .slideX(
+                                  begin: 0.8,
+                                  duration: 450.ms,
+                                  curve: Curves.easeOutCubic,
+                                )
+                                .fadeIn(duration: 250.ms),
                           ],
                         ),
-                        const Positioned(
+                        // El sticker de conexión aparece al final, con pop.
+                        Positioned(
                           bottom: 0,
-                          child: MascotSticker(
+                          child: const MascotSticker(
                             asset: AppAssets.stickerLove,
                             size: 96,
-                          ),
+                          )
+                              .animate()
+                              .scale(
+                                begin: const Offset(0.2, 0.2),
+                                delay: 350.ms,
+                                duration: 550.ms,
+                                curve: Curves.elasticOut,
+                              )
+                              .fadeIn(delay: 350.ms, duration: 150.ms),
                         ),
                       ],
                     ),
@@ -405,7 +430,10 @@ class _MatchOverlay extends ConsumerWidget {
                       style: theme.textTheme.headlineMedium
                           ?.copyWith(color: Colors.white),
                     ),
-                  ),
+                  )
+                      .animate()
+                      .fadeIn(delay: 500.ms, duration: 300.ms)
+                      .shimmer(delay: 800.ms, duration: 900.ms),
                   const SizedBox(height: 8),
                   Text(
                     'Tú y ${candidate.profile.name} quieren conectar.',

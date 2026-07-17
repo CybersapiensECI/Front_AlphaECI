@@ -101,7 +101,7 @@ Sin `--dart-define` se usan los defaults de `lib/core/config/env.dart`.
 
 ## 5. Cómo está organizado el código
 
-Lee `docs/ARQUITECTURA.md` para el detalle. Resumen mental:
+Lee `docs/ARQUITECTURA.md` para el detalle de capas y `docs/FEATURES.md` para el mapa feature por feature. Resumen mental:
 
 ```
 lib/core/      → lo compartido: HTTP, errores, rutas, tema, widgets comunes

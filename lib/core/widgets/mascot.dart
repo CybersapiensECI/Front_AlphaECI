@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 import '../theme/app_assets.dart';
 import '../theme/design_tokens.dart';
@@ -108,7 +109,26 @@ class MascotEmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            MascotSticker(asset: asset, size: 110),
+            // Balanceo suave en loop (interno) + entrada elástica única
+            // (externo): dos controllers separados, el vacío se siente
+            // vivo sin re-disparar la entrada.
+            MascotSticker(asset: asset, size: 110)
+                .animate(
+                  onPlay: (controller) => controller.repeat(reverse: true),
+                )
+                .rotate(
+                  begin: -0.015,
+                  end: 0.015,
+                  duration: 1800.ms,
+                  curve: Curves.easeInOut,
+                )
+                .animate()
+                .scale(
+                  begin: const Offset(0.5, 0.5),
+                  duration: 600.ms,
+                  curve: Curves.elasticOut,
+                )
+                .fadeIn(duration: 200.ms),
             const SizedBox(height: AppSpacing.md),
             Text(
               message,
@@ -139,7 +159,14 @@ void showMascotSnackBar(BuildContext context, String message, String asset) {
       SnackBar(
         content: Row(
           children: [
-            MascotSticker(asset: asset, size: 40),
+            // Pop del sticker al aparecer el aviso.
+            MascotSticker(asset: asset, size: 40)
+                .animate()
+                .scale(
+                  begin: const Offset(0.3, 0.3),
+                  duration: 500.ms,
+                  curve: Curves.elasticOut,
+                ),
             const SizedBox(width: 12),
             Flexible(
               child: Text(

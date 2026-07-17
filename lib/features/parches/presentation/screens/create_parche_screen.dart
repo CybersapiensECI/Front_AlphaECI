@@ -181,7 +181,7 @@ class _CreateParcheScreenState extends ConsumerState<CreateParcheScreen> {
                                 color: AppCategoryStyles.of(category).$2,
                               ),
                               const SizedBox(width: 8),
-                              Text(category),
+                              Text(AppCategoryStyles.labelOf(category)),
                             ],
                           ),
                         ),

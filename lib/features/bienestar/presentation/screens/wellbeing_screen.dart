@@ -18,14 +18,14 @@ import '../providers/wellbeing_provider.dart';
 class WellbeingScreen extends ConsumerWidget {
   const WellbeingScreen({super.key});
 
-  // TODO(backend): confirmar categorías sembradas en BienestarService.
-  static const _categories = ['PSICOLOGÍA', 'NUTRICIÓN', 'ACADÉMICO'];
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final resources = ref.watch(wellbeingResourcesProvider);
     final contacts = ref.watch(emergencyContactsProvider);
     final selected = ref.watch(wellbeingCategoryProvider);
+    // Chips derivados de los datos reales (sin catálogo en el back).
+    final categories =
+        ref.watch(wellbeingCategoriesProvider).valueOrNull ?? const <String>[];
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
 
@@ -124,7 +124,7 @@ class WellbeingScreen extends ConsumerWidget {
                           .read(wellbeingCategoryProvider.notifier)
                           .state = null,
                     ),
-                    for (final category in _categories)
+                    for (final category in categories)
                       InterestChip(
                         label: AppCategoryStyles.labelOf(category),
                         selected: selected == category,

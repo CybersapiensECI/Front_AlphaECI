@@ -123,29 +123,63 @@ abstract final class AppGlass {
 abstract final class AppCategoryStyles {
   static const _fallback = (Icons.celebration_outlined, Color(0xFF3E6FA5));
 
+  /// Enum REAL de Parches-Service (ParcheCategory.java) — respetar los
+  /// valores tal cual, incluidos sus typos (PHOTOGRAFY, PROGRAMING,
+  /// TECNOLOGY): son la API. Más alias sueltos de otros servicios cuyos
+  /// datos usan strings libres (eventos, bienestar, catálogo de tags).
   static const Map<String, (IconData, Color)> _styles = {
-    'DEPORTE': (Icons.sports_soccer, Color(0xFF2FA36F)),
-    'ESTUDIO': (Icons.menu_book_outlined, Color(0xFF3E6FA5)),
-    'JUEGOS': (Icons.sports_esports_outlined, Color(0xFF7C5CD6)),
-    'CULTURA': (Icons.theater_comedy_outlined, Color(0xFFE08A3C)),
-    'COMIDA': (Icons.restaurant_outlined, Color(0xFFD95E5E)),
-    // Categorías de eventos universitarios.
+    // ── ParcheCategory (backend) ──
+    'SPORTS': (Icons.sports_soccer, Color(0xFF2FA36F)),
+    'STUDIES': (Icons.menu_book_outlined, Color(0xFF3E6FA5)),
+    'READING': (Icons.auto_stories_outlined, Color(0xFF3E6FA5)),
+    'GAMING': (Icons.sports_esports_outlined, Color(0xFF7C5CD6)),
+    'PROGRAMING': (Icons.code, Color(0xFF2F9E9E)),
+    'TECNOLOGY': (Icons.memory_outlined, Color(0xFF5D95D1)),
+    'MUSIC': (Icons.music_note_outlined, Color(0xFFAA5CC3)),
+    'DANCE': (Icons.nightlife_outlined, Color(0xFFAA5CC3)),
+    'ART_AND_CULTURE': (Icons.theater_comedy_outlined, Color(0xFFE08A3C)),
+    'CINEMA': (Icons.movie_outlined, Color(0xFFE08A3C)),
+    'PHOTOGRAFY': (Icons.photo_camera_outlined, Color(0xFF2F9E9E)),
+    'GASTRONOMY': (Icons.restaurant_outlined, Color(0xFFD95E5E)),
+    // ── Alias de datos libres (eventos/bienestar/tags) ──
     'TECH': (Icons.memory_outlined, Color(0xFF5D95D1)),
     'BIENESTAR': (Icons.spa_outlined, Color(0xFF2F9E9E)),
-    // Categorías del catálogo de intereses (profile-service).
+    'DEPORTE': (Icons.sports_soccer, Color(0xFF2FA36F)),
+    'CULTURA': (Icons.theater_comedy_outlined, Color(0xFFE08A3C)),
     'TECNOLOGÍA': (Icons.memory_outlined, Color(0xFF5D95D1)),
     'ENTRETENIMIENTO': (Icons.sports_esports_outlined, Color(0xFF7C5CD6)),
+    'PSICOLOGÍA': (Icons.psychology_outlined, Color(0xFFAA5CC3)),
+    'NUTRICIÓN': (Icons.restaurant_outlined, Color(0xFF2FA36F)),
+    'ACADÉMICO': (Icons.menu_book_outlined, Color(0xFF3E6FA5)),
+  };
+
+  /// Labels en español para los valores del enum del back.
+  static const Map<String, String> _labels = {
+    'SPORTS': 'Deporte',
+    'STUDIES': 'Estudio',
+    'READING': 'Lectura',
+    'GAMING': 'Juegos',
+    'PROGRAMING': 'Programación',
+    'TECNOLOGY': 'Tecnología',
+    'MUSIC': 'Música',
+    'DANCE': 'Baile',
+    'ART_AND_CULTURE': 'Arte y cultura',
+    'CINEMA': 'Cine',
+    'PHOTOGRAFY': 'Fotografía',
+    'GASTRONOMY': 'Gastronomía',
   };
 
   static (IconData, Color) of(String? category) =>
       _styles[category?.toUpperCase()] ?? _fallback;
 
-  /// Etiqueta legible y uniforme para chips/filtros: la API usa MAYÚSCULAS
-  /// (DEPORTE, TECH) pero en UI siempre va Title case (Deporte, Tech).
+  /// Etiqueta legible y uniforme para chips/filtros. Traduce los valores
+  /// del enum del back; para strings libres, Title case.
   static String labelOf(String? category) {
     final c = category?.trim();
     if (c == null || c.isEmpty) return '';
-    final lower = c.toLowerCase();
+    final known = _labels[c.toUpperCase()];
+    if (known != null) return known;
+    final lower = c.replaceAll('_', ' ').toLowerCase();
     return lower[0].toUpperCase() + lower.substring(1);
   }
 }

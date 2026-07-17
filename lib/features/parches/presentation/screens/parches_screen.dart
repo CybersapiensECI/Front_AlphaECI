@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -18,10 +19,22 @@ import '../../domain/entities/parche.dart';
 import '../providers/parche_provider.dart';
 import '../widgets/friend_picker.dart';
 
-/// Categorías del feed. TODO(backend): confirmar valores del enum
-/// ParcheCategory sembrados en Parches-Service.
-const kParcheCategories =
-    ['DEPORTE', 'ESTUDIO', 'JUEGOS', 'CULTURA', 'COMIDA'];
+/// Enum ParcheCategory REAL de Parches-Service (valores API tal cual,
+/// typos incluidos). Labels bonitos: AppCategoryStyles.labelOf.
+const kParcheCategories = [
+  'SPORTS',
+  'STUDIES',
+  'GAMING',
+  'PROGRAMING',
+  'TECNOLOGY',
+  'MUSIC',
+  'DANCE',
+  'ART_AND_CULTURE',
+  'CINEMA',
+  'PHOTOGRAFY',
+  'READING',
+  'GASTRONOMY',
+];
 
 /// Feed de parches con búsqueda y FAB para crear.
 class ParchesScreen extends ConsumerStatefulWidget {
@@ -51,12 +64,21 @@ class _ParchesScreenState extends ConsumerState<ParchesScreen> {
 
     return Scaffold(
       backgroundColor: Colors.transparent,
+      // Entrada con rebote del FAB al abrir la pestaña.
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'create-parche',
         onPressed: () => context.push(Routes.createParche),
         icon: const Icon(Icons.add),
         label: const Text('Crear parche'),
-      ),
+      )
+          .animate()
+          .scale(
+            begin: const Offset(0.4, 0.4),
+            delay: 250.ms,
+            duration: 500.ms,
+            curve: Curves.elasticOut,
+          )
+          .fadeIn(delay: 250.ms, duration: 150.ms),
       body: Column(
         children: [
           Padding(

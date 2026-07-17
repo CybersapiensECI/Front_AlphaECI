@@ -16,6 +16,25 @@ final wellbeingRepositoryProvider = Provider<WellbeingRepository>((ref) {
 
 final wellbeingCategoryProvider = StateProvider<String?>((_) => null);
 
+/// Categorías DERIVADAS de los recursos reales. BienestarService no
+/// define enum de categorías (String libre): los chips salen de los
+/// datos, no de una lista inventada en el front.
+final wellbeingCategoriesProvider =
+    FutureProvider<List<String>>((ref) async {
+  final result = await ref.watch(wellbeingRepositoryProvider).getResources();
+  return result.when(
+    success: (resources) {
+      final unique = <String>{
+        for (final resource in resources)
+          if (resource.category?.trim().isNotEmpty == true)
+            resource.category!.trim(),
+      };
+      return unique.toList()..sort();
+    },
+    error: (failure) => throw failure,
+  );
+});
+
 final wellbeingResourcesProvider =
     FutureProvider<List<WellbeingResource>>((ref) async {
   final category = ref.watch(wellbeingCategoryProvider);
