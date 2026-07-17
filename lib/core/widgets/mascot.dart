@@ -42,25 +42,44 @@ class MascotSticker extends StatelessWidget {
     required this.asset,
     this.size = 72,
     this.fallbackIcon = Icons.pets,
+    this.rounded = false,
   });
 
   final String asset;
   final double size;
   final IconData fallbackIcon;
 
+  /// El PNG del sticker es un recorte irregular que llega casi hasta los
+  /// bordes de su lienzo cuadrado: junto a tarjetas y avatares circulares
+  /// se ve "cuadrado". Con [rounded] se enmarca en una insignia circular
+  /// (sin recortar el arte, solo con relleno) para que combine con el
+  /// resto de la UI.
+  final bool rounded;
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return SizedBox(
+    final image = Image.asset(
+      asset,
+      fit: BoxFit.contain,
+      errorBuilder: (_, _, _) => Center(
+        child: Icon(fallbackIcon, size: size * 0.5, color: scheme.primary),
+      ),
+    );
+
+    if (!rounded) {
+      return SizedBox(width: size, height: size, child: image);
+    }
+
+    return Container(
       width: size,
       height: size,
-      child: Image.asset(
-        asset,
-        fit: BoxFit.contain,
-        errorBuilder: (_, _, _) => Center(
-          child: Icon(fallbackIcon, size: size * 0.5, color: scheme.primary),
-        ),
+      padding: EdgeInsets.all(size * 0.1),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: scheme.surfaceContainerHigh,
       ),
+      child: image,
     );
   }
 }

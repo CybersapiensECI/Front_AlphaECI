@@ -111,8 +111,8 @@ class FeedScreen extends ConsumerWidget {
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            'Estás en «${publishable.name}» — '
-                            'comparte el momento',
+                            'Comparte lo que está pasando en '
+                            '«${publishable.name}»',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: theme.textTheme.bodyMedium,

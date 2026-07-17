@@ -192,7 +192,11 @@ class _NotificationCard extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Expresión de la mascota según el tipo.
-                  MascotSticker(asset: _stickerOf(kind), size: 56),
+                  MascotSticker(
+                    asset: _stickerOf(kind),
+                    size: 56,
+                    rounded: true,
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(

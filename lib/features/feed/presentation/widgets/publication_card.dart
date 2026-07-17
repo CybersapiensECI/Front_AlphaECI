@@ -228,7 +228,7 @@ class PublicationCard extends ConsumerWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          Icons.mode_comment_outlined,
+                          Icons.mode_comment_rounded,
                           size: 20,
                           color: theme.colorScheme.onSurfaceVariant,
                         ),

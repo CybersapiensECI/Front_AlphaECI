@@ -10,11 +10,20 @@ import '../../../../core/widgets/animations.dart';
 import '../../../../core/widgets/async_value_view.dart';
 import '../../../../core/widgets/glass_card.dart';
 import '../../../../core/widgets/gradient_scaffold.dart';
+import '../../../../core/widgets/info_popup.dart';
 import '../../../../core/widgets/mascot.dart';
 import '../../domain/entities/mona.dart';
 import '../providers/gamification_provider.dart';
 import '../widgets/mona_medal.dart';
 import '../widgets/mona_styles.dart';
+
+/// Texto de ayuda de esta pantalla, en tono cercano y sin jerga técnica.
+/// Compartido entre la AppBar propia de [MonasScreen] y la AppBar del
+/// shell principal (home_screen.dart) cuando Monas es un tab.
+const monasHelpTitle = 'Monas';
+const monasHelpMessage = 'Es tu álbum de logros: ve ganando monas al '
+    'participar en parches y eventos de la comunidad. Toca cualquier '
+    'casilla para verla de cerca.';
 
 /// Colección de monas como ÁLBUM de pegatinas: casillas desbloqueadas a
 /// color, en progreso con anillo, y bloqueadas como silueta por descubrir.
@@ -25,18 +34,59 @@ class MonasScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GradientScaffold(
-      appBar: AppBar(title: const Text('Álbum de Monas')),
+      appBar: AppBar(
+        title: const Text('Álbum de Monas'),
+        actions: [
+          IconButton(
+            tooltip: 'Ayuda',
+            onPressed: () => showInfoPopup(
+              context,
+              title: monasHelpTitle,
+              message: monasHelpMessage,
+            ),
+            icon: const Icon(Icons.help_outline_rounded),
+          ),
+        ],
+      ),
       body: const MonasBody(),
     );
   }
 }
 
 /// Cuerpo del álbum, reutilizable como tab del shell principal.
-class MonasBody extends ConsumerWidget {
+class MonasBody extends ConsumerStatefulWidget {
   const MonasBody({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MonasBody> createState() => _MonasBodyState();
+}
+
+class _MonasBodyState extends ConsumerState<MonasBody> {
+  @override
+  void initState() {
+    super.initState();
+    // Popup de bienvenida solo la primera vez que se abre esta pantalla.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeShowWelcome());
+  }
+
+  Future<void> _maybeShowWelcome() async {
+    final storage = ref.read(onboardingStorageProvider);
+    if (await storage.hasSeenMonasWelcome()) return;
+    await storage.markMonasWelcomeSeen();
+    if (!mounted) return;
+    showInfoPopup(
+      context,
+      title: '¡Bienvenido a tu Álbum de Monas!',
+      message: 'Aquí coleccionas las monas que desbloqueas al participar '
+          'en parches, eventos y retos de la comunidad. Cada una suma XP '
+          'a tu perfil — ¡sigue explorando para completar el álbum!',
+      stickerAsset: AppAssets.stickerCool,
+      actionLabel: '¡Vamos!',
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final monas = ref.watch(myMonasProvider);
     final theme = Theme.of(context);
 

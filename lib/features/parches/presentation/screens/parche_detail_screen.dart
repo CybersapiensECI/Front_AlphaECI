@@ -353,7 +353,7 @@ class _ParcheDetailScreenState extends ConsumerState<ParcheDetailScreen> {
                                                 tooltip: 'Comentar',
                                                 icon: const Icon(
                                                     Icons
-                                                        .mode_comment_outlined,
+                                                        .mode_comment_rounded,
                                                     size: 20),
                                                 onPressed: () =>
                                                     _comment(post.id),

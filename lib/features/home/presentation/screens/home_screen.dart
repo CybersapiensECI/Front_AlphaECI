@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/router/routes.dart';
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/widgets/adaptive_scaffold.dart';
+import '../../../../core/widgets/info_popup.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../events/presentation/screens/events_screen.dart';
 import '../../../feed/presentation/screens/feed_screen.dart';
@@ -29,6 +30,45 @@ abstract final class HomeTabs {
   static const monas = 5;
   static const perfil = 6;
 }
+
+/// Título y explicación de cada tab para el botón de ayuda — en tono
+/// cercano, sin jerga técnica, para que cualquier usuario entienda para
+/// qué sirve la pantalla en la que está.
+(String, String) _helpContentFor(int index) => switch (index) {
+      HomeTabs.inicio => (
+          'Inicio',
+          'Aquí ves lo que comparte tu comunidad: fotos y novedades de '
+              'los parches a los que perteneces. Dale like o comenta '
+              'para interactuar.',
+        ),
+      HomeTabs.parches => (
+          'Parches',
+          'Un parche es un grupo para hacer planes juntos. Búscalos por '
+              'categoría y únete a los que te llamen la atención.',
+        ),
+      HomeTabs.descubrir => (
+          'Descubrir',
+          'Desliza entre perfiles de otros estudiantes con intereses '
+              'parecidos a los tuyos. Si hay conexión, aparece en tus '
+              'Matches.',
+        ),
+      HomeTabs.matches => (
+          'Matches',
+          'Aquí quedan las personas con las que hiciste match. Tócalas '
+              'para empezar a chatear.',
+        ),
+      HomeTabs.eventos => (
+          'Eventos',
+          'Entérate de los eventos de la universidad y apúntate a los '
+              'que más te llamen la atención.',
+        ),
+      HomeTabs.monas => (monasHelpTitle, monasHelpMessage),
+      _ => (
+          'Perfil',
+          'Aquí editas tu información, revisas tus estadísticas y '
+              'gestionas tu cuenta.',
+        ),
+    };
 
 /// Shell principal: Inicio · Parches · Descubrir · Matches · Eventos · Perfil.
 /// Campana de notificaciones con badge en el AppBar.
@@ -113,7 +153,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           IconButton(
             tooltip: 'Chats',
             onPressed: () => context.push(Routes.chats),
-            icon: const Icon(Icons.chat_bubble_outline),
+            icon: const Icon(Icons.chat_bubble_outline_rounded),
           ),
           // Mapa del campus con parches en tiempo real.
           IconButton(
@@ -128,8 +168,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             icon: Badge(
               isLabelVisible: unread > 0,
               label: Text('$unread'),
-              child: const Icon(Icons.notifications_outlined),
+              child: const Icon(Icons.notifications_none_rounded),
             ),
+          ),
+          // Ayuda contextual: explica en lenguaje simple para qué sirve
+          // la pantalla del tab activo.
+          IconButton(
+            tooltip: 'Ayuda',
+            onPressed: () {
+              final (title, message) = _helpContentFor(index);
+              showInfoPopup(context, title: title, message: message);
+            },
+            icon: const Icon(Icons.help_outline_rounded),
           ),
           PopupMenuButton<String>(
             onSelected: (value) {

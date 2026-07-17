@@ -3,11 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/config/env.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../../core/storage/onboarding_storage.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../data/repositories/gamification_repository_impl.dart';
 import '../../data/repositories/mock_gamification_repository.dart';
 import '../../domain/entities/mona.dart';
 import '../../domain/repositories/gamification_repository.dart';
+
+final onboardingStorageProvider = Provider((_) => const OnboardingStorage());
 
 final gamificationRepositoryProvider = Provider<GamificationRepository>((ref) {
   if (Env.demoMode) return const MockGamificationRepository();
