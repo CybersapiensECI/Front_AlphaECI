@@ -44,6 +44,22 @@ class MatchingRepositoryImpl implements MatchingRepository {
     return _guard(() => _api.respond(matchId, userId, status));
   }
 
+  @override
+  Future<Result<Relationship>> getRelationship({
+    required String userId,
+    required String otherUserId,
+  }) {
+    return _guard(() => _api.getRelationship(userId, otherUserId));
+  }
+
+  @override
+  Future<Result<void>> removeFriend({
+    required String userId,
+    required String friendId,
+  }) {
+    return _guard(() => _api.removeFriend(userId, friendId));
+  }
+
   Future<Result<T>> _guard<T>(Future<T> Function() call) async {
     try {
       return Success(await call());

@@ -125,16 +125,35 @@ Future<List<MatchWithProfile>> _withProfiles(
   ];
 }
 
+/// IDs de amigos reales (perfil propio, friendsId) — única fuente de verdad,
+/// la misma que matching-service consulta primero en /relationship. No se
+/// deriva de documentos de match: matching-service permitía (antes del fix
+/// de hoy) que existieran dos Match independientes para el mismo par —uno
+/// por dirección— con estados que podían divergir (uno REJECTED viejo y
+/// otro ACCEPTED más reciente), lo que hacía aparecer a un amigo real como
+/// "Rechazada" en Enviadas. Enviadas/Recibidas se filtran contra esto.
+final friendIdsProvider = FutureProvider<Set<String>>((ref) async {
+  final profile = await ref.watch(myProfileProvider.future);
+  return profile.friendsId.toSet();
+});
+
 /// Solicitudes recibidas (yo soy target → la otra persona es requester).
+/// Excluye a quien ya es amigo real: un match viejo (aceptado o rechazado
+/// en el otro sentido) no debe seguir apareciendo como solicitud.
 final receivedMatchesProvider =
     FutureProvider<List<MatchWithProfile>>((ref) async {
   final session = ref.watch(authControllerProvider).session;
   if (session == null) throw const AuthFailure();
+  final friendIds = await ref.watch(friendIdsProvider.future);
   final result =
       await ref.read(matchingRepositoryProvider).getReceived(session.userId);
   return result.when(
     error: (failure) => throw failure,
-    success: (matches) => _withProfiles(ref, matches, (m) => m.requesterId),
+    success: (matches) => _withProfiles(
+      ref,
+      [for (final m in matches) if (!friendIds.contains(m.requesterId)) m],
+      (m) => m.requesterId,
+    ),
   );
 });
 
@@ -143,24 +162,57 @@ final sentMatchesProvider =
     FutureProvider<List<MatchWithProfile>>((ref) async {
   final session = ref.watch(authControllerProvider).session;
   if (session == null) throw const AuthFailure();
+  final friendIds = await ref.watch(friendIdsProvider.future);
   final result =
       await ref.read(matchingRepositoryProvider).getSent(session.userId);
   return result.when(
     error: (failure) => throw failure,
-    success: (matches) => _withProfiles(ref, matches, (m) => m.targetId),
+    success: (matches) => _withProfiles(
+      ref,
+      [for (final m in matches) if (!friendIds.contains(m.targetId)) m],
+      (m) => m.targetId,
+    ),
   );
 });
 
-/// Amistades: conexiones ACCEPTED (recibidas + enviadas), sin duplicados.
+/// Amistades: perfiles resueltos directo de friendsId (ver friendIdsProvider).
 final friendsProvider = FutureProvider<List<MatchWithProfile>>((ref) async {
-  final received = await ref.watch(receivedMatchesProvider.future);
-  final sent = await ref.watch(sentMatchesProvider.future);
-  final seen = <String>{};
-  return [
-    for (final m in [...received, ...sent])
-      if (m.match.status == MatchStatus.accepted && seen.add(m.profile.id))
-        m,
-  ];
+  final friendIds = await ref.watch(friendIdsProvider.future);
+  if (friendIds.isEmpty) return const [];
+  final result = await ref
+      .read(profileRepositoryProvider)
+      .getProfilesByIds(friendIds.toList());
+  return result.when(
+    success: (profiles) => [
+      for (final p in profiles)
+        MatchWithProfile(
+          match: Match(
+            id: '',
+            requesterId: '',
+            targetId: p.id,
+            status: MatchStatus.accepted,
+          ),
+          profile: p,
+        ),
+    ],
+    error: (_) => const [],
+  );
+});
+
+/// Relación con otro usuario (fuente única para el botón del perfil
+/// público): FRIEND, PENDING_SENT, PENDING_RECEIVED o NONE.
+final relationshipProvider =
+    FutureProvider.family<Relationship, String>((ref, otherUserId) async {
+  final session = ref.watch(authControllerProvider).session;
+  if (session == null) throw const AuthFailure();
+  final result = await ref.read(matchingRepositoryProvider).getRelationship(
+        userId: session.userId,
+        otherUserId: otherUserId,
+      );
+  return result.when(
+    success: (relationship) => relationship,
+    error: (failure) => throw failure,
+  );
 });
 
 /// Aceptar/rechazar una solicitud recibida.
@@ -180,6 +232,22 @@ class MatchActions {
           status: status,
         );
     if (result.isSuccess) {
+      _ref.invalidate(friendIdsProvider);
+      _ref.invalidate(receivedMatchesProvider);
+      _ref.invalidate(sentMatchesProvider);
+    }
+    return result;
+  }
+
+  Future<Result<void>> removeFriend(String friendId) async {
+    final session = _ref.read(authControllerProvider).session;
+    if (session == null) return const Error(AuthFailure());
+    final result = await _ref.read(matchingRepositoryProvider).removeFriend(
+          userId: session.userId,
+          friendId: friendId,
+        );
+    if (result.isSuccess) {
+      _ref.invalidate(friendIdsProvider);
       _ref.invalidate(receivedMatchesProvider);
       _ref.invalidate(sentMatchesProvider);
     }

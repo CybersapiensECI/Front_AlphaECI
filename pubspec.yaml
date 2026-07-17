@@ -49,6 +49,8 @@ dev_dependencies:
     sdk: flutter
 
   flutter_lints: ^6.0.0
+  # Genera el icono de la app (Android/iOS) a partir de assets/brand/logo_square.png
+  flutter_launcher_icons: ^0.14.2
 
 flutter:
   uses-material-design: true
@@ -57,3 +59,14 @@ flutter:
     - assets/brand/
     - assets/stickers/
     - assets/monas/
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/brand/logo_square.png"
+  # Adaptive icon (Android 8+): fondo azul de marca + logo (transparente) encima.
+  adaptive_icon_background: "#1A3F6D"
+  adaptive_icon_foreground: "assets/brand/logo_square.png"
+  # iOS no admite transparencia en el icono: se aplana sobre este fondo.
+  background_color_ios: "#1A3F6D"
+  remove_alpha_ios: true

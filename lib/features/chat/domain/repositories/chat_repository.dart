@@ -6,6 +6,11 @@ abstract interface class ChatRepository {
   /// GET /api/chat/connections.
   Future<Result<List<ChatConnection>>> getConnections();
 
+  /// POST /api/chat/connections/friend/{friendId} — get-or-create, idempotente.
+  /// Backfill natural para amistades de antes de que existiera el consumer
+  /// de friendship.created: si la sala aún no existe, se crea en el momento.
+  Future<Result<ChatConnection>> ensureFriendRoom(String friendId);
+
   /// GET /api/chat/{chatRoomId}/messages (paginado, page 0 = recientes).
   Future<Result<List<ChatMessage>>> getHistory(String chatRoomId);
 

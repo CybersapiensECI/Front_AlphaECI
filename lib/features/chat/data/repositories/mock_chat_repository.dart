@@ -68,13 +68,30 @@ class MockChatRepository implements ChatRepository {
   Future<Result<T>> _ok<T>(T value) =>
       Future.delayed(const Duration(milliseconds: 350), () => Success(value));
 
+  final Map<String, String> _friendRooms = {
+    'u2': 'room-ana',
+    'u4': 'room-juana',
+  };
+
   @override
-  Future<Result<List<ChatConnection>>> getConnections() => _ok(const [
-        ChatConnection(
-            chatRoomId: 'room-ana', otherUserId: 'u2', status: 'ACTIVE'),
-        ChatConnection(
-            chatRoomId: 'room-juana', otherUserId: 'u4', status: 'ACTIVE'),
+  Future<Result<List<ChatConnection>>> getConnections() => _ok([
+        for (final entry in _friendRooms.entries)
+          ChatConnection(
+            chatRoomId: entry.value,
+            otherUserId: entry.key,
+            status: 'ACTIVE',
+          ),
       ]);
+
+  @override
+  Future<Result<ChatConnection>> ensureFriendRoom(String friendId) {
+    final roomId = _friendRooms.putIfAbsent(friendId, () => 'room-$friendId');
+    return _ok(ChatConnection(
+      chatRoomId: roomId,
+      otherUserId: friendId,
+      status: 'ACTIVE',
+    ));
+  }
 
   @override
   Future<Result<List<ChatMessage>>> getHistory(String chatRoomId) =>

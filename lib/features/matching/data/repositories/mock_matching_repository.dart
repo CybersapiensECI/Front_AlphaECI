@@ -116,4 +116,47 @@ class MockMatchingRepository implements MatchingRepository {
     }
     return _ok(_received.first);
   }
+
+  @override
+  Future<Result<Relationship>> getRelationship({
+    required String userId,
+    required String otherUserId,
+  }) {
+    final isFriend = _sent.any((m) =>
+            m.targetId == otherUserId && m.status == MatchStatus.accepted) ||
+        _received.any((m) =>
+            m.requesterId == otherUserId && m.status == MatchStatus.accepted);
+    if (isFriend) {
+      return _ok(const Relationship(status: RelationshipStatus.friend));
+    }
+    final sentPending = _sent.where(
+        (m) => m.targetId == otherUserId && m.status == MatchStatus.pending);
+    if (sentPending.isNotEmpty) {
+      return _ok(Relationship(
+        status: RelationshipStatus.pendingSent,
+        matchId: sentPending.first.id,
+      ));
+    }
+    final receivedPending = _received.where((m) =>
+        m.requesterId == otherUserId && m.status == MatchStatus.pending);
+    if (receivedPending.isNotEmpty) {
+      return _ok(Relationship(
+        status: RelationshipStatus.pendingReceived,
+        matchId: receivedPending.first.id,
+      ));
+    }
+    return _ok(const Relationship(status: RelationshipStatus.none));
+  }
+
+  @override
+  Future<Result<void>> removeFriend({
+    required String userId,
+    required String friendId,
+  }) {
+    _sent.removeWhere(
+        (m) => m.targetId == friendId && m.status == MatchStatus.accepted);
+    _received.removeWhere(
+        (m) => m.requesterId == friendId && m.status == MatchStatus.accepted);
+    return _ok(null);
+  }
 }

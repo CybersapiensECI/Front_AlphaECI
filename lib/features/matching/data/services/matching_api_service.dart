@@ -59,6 +59,25 @@ class MatchingApiService {
     return _matchFromJson(response.data!);
   }
 
+  Future<Relationship> getRelationship(String userId, String otherUserId) async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '$_base/relationship',
+      queryParameters: {'userId': userId, 'otherUserId': otherUserId},
+    );
+    final json = response.data!;
+    return Relationship(
+      status: RelationshipStatus.fromApi(json['status'] as String?),
+      matchId: json['matchId'] as String?,
+    );
+  }
+
+  Future<void> removeFriend(String userId, String friendId) async {
+    await _dio.delete<void>(
+      '$_base/friends/$friendId',
+      queryParameters: {'userId': userId},
+    );
+  }
+
   // ── parsers (espejo de MatchResponse / RecommendationWithScoreResponse) ──
 
   static Match _matchFromJson(Map<String, dynamic> json) {

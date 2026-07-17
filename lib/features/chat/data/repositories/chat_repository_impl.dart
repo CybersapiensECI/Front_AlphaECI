@@ -45,6 +45,20 @@ class ChatRepositoryImpl implements ChatRepository {
   }
 
   @override
+  Future<Result<ChatConnection>> ensureFriendRoom(String friendId) async {
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        '$_base/connections/friend/$friendId',
+      );
+      return Success(_connectionFromJson(response.data!));
+    } on DioException catch (e) {
+      return Error(mapDioError(e));
+    } catch (_) {
+      return const Error(UnknownFailure());
+    }
+  }
+
+  @override
   Future<Result<List<ChatMessage>>> getHistory(String chatRoomId) async {
     try {
       final response = await _dio.get<Map<String, dynamic>>(

@@ -236,16 +236,12 @@ class _FriendsTab extends ConsumerWidget {
     if (confirmed != true || !context.mounted) return;
 
     if (action == 'remove') {
-      // Reutiliza el endpoint real de respuesta: pasa el match a REJECTED.
       final result = await ref
           .read(matchActionsProvider)
-          .respond(item.match.id, MatchStatus.rejected);
+          .removeFriend(item.profile.id);
       if (!context.mounted) return;
       result.when(
-        success: (_) {
-          ref.invalidate(friendsProvider);
-          showAppSnackBar(context, 'Amistad con $name eliminada.');
-        },
+        success: (_) => showAppSnackBar(context, 'Amistad con $name eliminada.'),
         error: (failure) => showAppSnackBar(context, failure.message),
       );
       return;

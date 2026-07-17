@@ -24,4 +24,17 @@ abstract interface class MatchingRepository {
     required String userId,
     required MatchStatus status,
   });
+
+  /// GET /relationship?userId=&otherUserId= — fuente única de verdad para
+  /// el botón del perfil público.
+  Future<Result<Relationship>> getRelationship({
+    required String userId,
+    required String otherUserId,
+  });
+
+  /// DELETE /friends/{friendId}?userId=.
+  Future<Result<void>> removeFriend({
+    required String userId,
+    required String friendId,
+  });
 }
