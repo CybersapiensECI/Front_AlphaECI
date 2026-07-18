@@ -76,11 +76,17 @@ class MockChatRepository implements ChatRepository {
   @override
   Future<Result<List<ChatConnection>>> getConnections() => _ok([
         for (final entry in _friendRooms.entries)
-          ChatConnection(
-            chatRoomId: entry.value,
-            otherUserId: entry.key,
-            status: 'ACTIVE',
-          ),
+          () {
+            final history = _history[entry.value];
+            final last = (history == null || history.isEmpty) ? null : history.last;
+            return ChatConnection(
+              chatRoomId: entry.value,
+              otherUserId: entry.key,
+              status: 'ACTIVE',
+              lastMessageContent: last?.content,
+              lastMessageAt: last?.sentAt,
+            );
+          }(),
       ]);
 
   @override

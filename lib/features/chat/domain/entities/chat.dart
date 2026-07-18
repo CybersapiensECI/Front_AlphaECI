@@ -7,6 +7,8 @@ class ChatConnection extends Equatable {
     required this.otherUserId,
     required this.status,
     this.createdAt,
+    this.lastMessageContent,
+    this.lastMessageAt,
   });
 
   final String chatRoomId;
@@ -15,9 +17,12 @@ class ChatConnection extends Equatable {
   /// PENDING / ACTIVE / ... (ChatRoomStatus del backend).
   final String status;
   final DateTime? createdAt;
+  final String? lastMessageContent;
+  final DateTime? lastMessageAt;
 
   @override
-  List<Object?> get props => [chatRoomId, otherUserId, status];
+  List<Object?> get props =>
+      [chatRoomId, otherUserId, status, lastMessageContent, lastMessageAt];
 }
 
 /// Mensaje — espejo de MessageResponse.

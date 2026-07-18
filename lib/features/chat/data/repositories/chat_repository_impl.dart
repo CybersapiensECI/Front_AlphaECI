@@ -178,6 +178,8 @@ class ChatRepositoryImpl implements ChatRepository {
       otherUserId: json['otherUserId'] as String? ?? '',
       status: json['status'] as String? ?? '',
       createdAt: DateTime.tryParse(json['createdAt'] as String? ?? ''),
+      lastMessageContent: json['lastMessageContent'] as String?,
+      lastMessageAt: DateTime.tryParse(json['lastMessageAt'] as String? ?? ''),
     );
   }
 

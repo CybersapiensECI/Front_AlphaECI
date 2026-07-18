@@ -16,7 +16,7 @@ import '../../../parches/presentation/providers/parche_provider.dart';
 import '../../../profile/presentation/widgets/profile_avatar.dart';
 import '../providers/chat_provider.dart';
 
-enum ChatFilter { todos, unread, directos, grupos }
+enum ChatFilter { todos, directos, grupos }
 
 final chatFilterProvider = StateProvider<ChatFilter>((ref) => ChatFilter.todos);
 
@@ -47,10 +47,6 @@ class ChatsScreen extends ConsumerWidget {
       items = [...myDirects];
     } else if (filter == ChatFilter.grupos) {
       items = [...myParches];
-    } else if (filter == ChatFilter.unread) {
-      // Mock: como no hay unread count real en el backend aún, simulamos que algunos
-      // o ninguno tiene no leídos, por ahora mostramos una lista vacía o todos.
-      items = [];
     }
 
     return GradientScaffold(
@@ -67,12 +63,6 @@ class ChatsScreen extends ConsumerWidget {
                   label: 'Todos',
                   selected: filter == ChatFilter.todos,
                   onSelected: () => ref.read(chatFilterProvider.notifier).state = ChatFilter.todos,
-                ),
-                const SizedBox(width: 8),
-                _FilterChip(
-                  label: 'No leídos',
-                  selected: filter == ChatFilter.unread,
-                  onSelected: () => ref.read(chatFilterProvider.notifier).state = ChatFilter.unread,
                 ),
                 const SizedBox(width: 8),
                 _FilterChip(
@@ -95,13 +85,9 @@ class ChatsScreen extends ConsumerWidget {
             child: isLoading
                 ? const SkeletonList(count: 6)
                 : items.isEmpty
-                    ? MascotEmptyState(
-                        asset: filter == ChatFilter.unread
-                            ? AppAssets.stickerSleepy
-                            : AppAssets.stickerConfused,
-                        message: filter == ChatFilter.unread
-                            ? 'No tienes mensajes nuevos.'
-                            : 'No hay chats para mostrar aquí.',
+                    ? const MascotEmptyState(
+                        asset: AppAssets.stickerConfused,
+                        message: 'No hay chats para mostrar aquí.',
                       )
                     : RefreshIndicator(
                         onRefresh: () async {
@@ -179,13 +165,21 @@ class _DirectChatTile extends StatelessWidget {
         style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
       ),
       subtitle: Text(
-        conversation.profile.biography ?? 'Toca para chatear',
+        conversation.connection.lastMessageContent ?? 'Toca para chatear',
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: theme.textTheme.bodyMedium?.copyWith(
           color: theme.colorScheme.onSurfaceVariant,
         ),
       ),
+      trailing: conversation.connection.lastMessageAt == null
+          ? null
+          : Text(
+              _timeAgo(conversation.connection.lastMessageAt),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
       onTap: () => context.push(
         Routes.chatRoomPath(conversation.connection.chatRoomId),
         extra: conversation,
@@ -229,4 +223,14 @@ class _GroupChatTile extends StatelessWidget {
       ),
     );
   }
+}
+
+String _timeAgo(DateTime? date) {
+  if (date == null) return '';
+  final diff = DateTime.now().difference(date);
+  if (diff.inMinutes < 1) return 'ahora';
+  if (diff.inHours < 1) return '${diff.inMinutes} min';
+  if (diff.inDays < 1) return '${diff.inHours} h';
+  if (diff.inDays < 7) return '${diff.inDays} d';
+  return '${(diff.inDays / 7).floor()} sem';
 }
