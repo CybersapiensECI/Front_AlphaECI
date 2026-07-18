@@ -17,8 +17,12 @@ final apiClientProvider = Provider.family<Dio, String>((ref, baseUrl) {
   final dio = Dio(
     BaseOptions(
       baseUrl: baseUrl,
-      connectTimeout: const Duration(seconds: 10),
-      receiveTimeout: const Duration(seconds: 20),
+      // Los backends en Azure Container Apps escalan a 0 réplicas sin
+      // tráfico y el primer request del día tarda 30-60 s en despertarlos;
+      // con menos margen, ese arranque en frío se reporta como "Sin
+      // conexión" aunque el servicio esté bien.
+      connectTimeout: const Duration(seconds: 35),
+      receiveTimeout: const Duration(seconds: 60),
       headers: {'Content-Type': 'application/json'},
     ),
   );
