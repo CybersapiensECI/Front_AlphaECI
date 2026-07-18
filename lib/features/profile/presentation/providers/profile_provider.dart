@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/config/env.dart';
@@ -73,6 +75,30 @@ class ProfileActions {
           biography: biography,
           privacyLevel: privacyLevel,
         );
+    if (result.isSuccess) _ref.invalidate(myProfileProvider);
+    return result;
+  }
+
+  /// Sube la foto a profile-service (POST /profile-image) y refresca el
+  /// perfil. [retries] > 0 reintenta con espera: tras el registro el perfil
+  /// se crea de forma asíncrona (evento user-verified por RabbitMQ) y la
+  /// primera subida puede llegar antes de que el usuario exista (404).
+  Future<Result<String>> updatePhoto(
+    Uint8List bytes, {
+    required String ext,
+    int retries = 0,
+  }) async {
+    final userId = _userId;
+    if (userId == null) return const Error(AuthFailure());
+    var result = await _ref
+        .read(profileRepositoryProvider)
+        .updatePhoto(userId, bytes, ext: ext);
+    for (var attempt = 0; result.isSuccess == false && attempt < retries; attempt++) {
+      await Future.delayed(Duration(seconds: 2 * (attempt + 1)));
+      result = await _ref
+          .read(profileRepositoryProvider)
+          .updatePhoto(userId, bytes, ext: ext);
+    }
     if (result.isSuccess) _ref.invalidate(myProfileProvider);
     return result;
   }

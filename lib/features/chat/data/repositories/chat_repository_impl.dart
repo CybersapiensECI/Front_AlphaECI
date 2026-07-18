@@ -59,6 +59,18 @@ class ChatRepositoryImpl implements ChatRepository {
   }
 
   @override
+  Future<Result<void>> ensureParcheRoom(String parcheId) async {
+    try {
+      await _dio.post<void>('$_base/connections/parche/$parcheId');
+      return const Success(null);
+    } on DioException catch (e) {
+      return Error(mapDioError(e));
+    } catch (_) {
+      return const Error(UnknownFailure());
+    }
+  }
+
+  @override
   Future<Result<List<ChatMessage>>> getHistory(String chatRoomId) async {
     try {
       final response = await _dio.get<Map<String, dynamic>>(

@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import '../../../../core/errors/result.dart';
 import '../entities/profile.dart';
 
@@ -15,6 +17,14 @@ abstract interface class ProfileRepository {
     int? semester,
     String? biography,
     String? privacyLevel,
+  });
+
+  /// POST /{userId}/profile-image — sube la foto (multipart) y devuelve la
+  /// URL final que asignó profile-service. Solo JPG/PNG, máx 5 MB.
+  Future<Result<String>> updatePhoto(
+    String userId,
+    Uint8List bytes, {
+    required String ext,
   });
 
   /// GET /tags — catálogo completo agrupado por categoría.

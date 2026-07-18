@@ -45,10 +45,13 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
   ];
 
   // Confirmado con backend: la sala grupal de un parche usa el propio
-  // parche.id como chatRoomId (chat-service la crea así al consumir
-  // parche.created, ver CreateParcheRoomUseCaseImpl).
-  String get _roomId =>
-      widget.conversation?.connection.chatRoomId ?? widget.parche!.id;
+  // parche.id como chatRoomId; el provider hace el ensure idempotente
+  // (POST /connections/parche/{id}) antes de pedir historial porque
+  // Parches-Service no publica parche.created y la sala puede no existir.
+  ChatRoomArgs get _room => (
+        roomId: widget.conversation?.connection.chatRoomId ?? widget.parche!.id,
+        isParche: widget.parche != null,
+      );
 
   @override
   void dispose() {
@@ -74,7 +77,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
     if (text.isEmpty) return;
     _input.clear();
     final result =
-        await ref.read(chatRoomProvider(_roomId).notifier).send(text);
+        await ref.read(chatRoomProvider(_room).notifier).send(text);
     if (!mounted) return;
     final failure = result.failureOrNull;
     if (failure != null) showAppSnackBar(context, failure.message);
@@ -82,11 +85,11 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final messages = ref.watch(chatRoomProvider(_roomId));
+    final messages = ref.watch(chatRoomProvider(_room));
     final myId = ref.watch(authControllerProvider).session?.userId ?? '';
 
     // Auto-scroll cuando llegan mensajes.
-    ref.listen(chatRoomProvider(_roomId), (_, _) => _scrollToBottom());
+    ref.listen(chatRoomProvider(_room), (_, _) => _scrollToBottom());
 
     final parche = widget.parche;
     final (categoryIcon, categoryColor) =
@@ -141,7 +144,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
               Expanded(
                 child: AsyncValueView<List<ChatMessage>>(
                   value: messages,
-                  onRetry: () => ref.invalidate(chatRoomProvider(_roomId)),
+                  onRetry: () => ref.invalidate(chatRoomProvider(_room)),
                   data: (items) {
                     _scrollToBottom();
                     return ListView.builder(

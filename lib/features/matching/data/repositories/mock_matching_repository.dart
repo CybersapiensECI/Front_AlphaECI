@@ -73,6 +73,15 @@ class MockMatchingRepository implements MatchingRepository {
   }
 
   @override
+  Future<Result<List<String>>> getFilteredRecommendationIds(
+    String userId,
+    DiscoveryFilters filters,
+  ) {
+    // Demo: simula que el filtro deja pasar a la mitad del mazo.
+    return _ok(filters.hasAny ? const ['u2', 'u4'] : const ['u2', 'u3', 'u4', 'u5']);
+  }
+
+  @override
   Future<Result<Match>> createMatch({
     required String requesterId,
     required String targetId,

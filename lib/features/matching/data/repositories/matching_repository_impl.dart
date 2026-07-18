@@ -18,6 +18,20 @@ class MatchingRepositoryImpl implements MatchingRepository {
   }
 
   @override
+  Future<Result<List<String>>> getFilteredRecommendationIds(
+    String userId,
+    DiscoveryFilters filters,
+  ) async {
+    final result =
+        await _guard(() => _api.getFilteredRecommendationIds(userId, filters));
+    // 404 = NoRecommendationsFoundException: nadie pasa el filtro, no un error.
+    if (result.failureOrNull is NotFoundFailure) {
+      return const Success([]);
+    }
+    return result;
+  }
+
+  @override
   Future<Result<Match>> createMatch({
     required String requesterId,
     required String targetId,

@@ -11,6 +11,12 @@ abstract interface class ChatRepository {
   /// de friendship.created: si la sala aún no existe, se crea en el momento.
   Future<Result<ChatConnection>> ensureFriendRoom(String friendId);
 
+  /// POST /api/chat/connections/parche/{parcheId} — get-or-create, idempotente.
+  /// Parches-Service no publica parche.created, así que la sala grupal solo
+  /// nace cuando alguien abre el chat; también agrega al caller como miembro
+  /// (sin esto el historial devuelve 403 para miembros previos al consumer).
+  Future<Result<void>> ensureParcheRoom(String parcheId);
+
   /// GET /api/chat/{chatRoomId}/messages (paginado, page 0 = recientes).
   Future<Result<List<ChatMessage>>> getHistory(String chatRoomId);
 

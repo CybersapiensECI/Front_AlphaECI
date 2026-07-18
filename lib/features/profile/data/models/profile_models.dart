@@ -55,6 +55,7 @@ UserProfile userProfileFromJson(Map<String, dynamic> json) => UserProfile(
         for (final f in (json['friendsId'] as List? ?? const [])) f as String,
       ],
       active: json['active'] as bool? ?? true,
+      geolocationEnabled: json['geolocationEnabled'] as bool? ?? false,
     );
 
 ProfileSummary profileSummaryFromJson(Map<String, dynamic> json) =>

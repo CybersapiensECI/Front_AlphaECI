@@ -94,6 +94,9 @@ class MockChatRepository implements ChatRepository {
   }
 
   @override
+  Future<Result<void>> ensureParcheRoom(String parcheId) => _ok(null);
+
+  @override
   Future<Result<List<ChatMessage>>> getHistory(String chatRoomId) =>
       _ok(List.of(_history[chatRoomId] ?? const []));
 

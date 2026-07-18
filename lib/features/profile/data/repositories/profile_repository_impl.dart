@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 
 import '../../../../core/errors/failure_mapper.dart';
@@ -36,6 +38,15 @@ class ProfileRepositoryImpl implements ProfileRepository {
       'privacyLevel': ?privacyLevel,
     };
     return _guard(() => _api.updateStudent(userId, fields));
+  }
+
+  @override
+  Future<Result<String>> updatePhoto(
+    String userId,
+    Uint8List bytes, {
+    required String ext,
+  }) {
+    return _guard(() => _api.uploadProfilePhoto(userId, bytes, ext: ext));
   }
 
   @override

@@ -43,14 +43,19 @@ class AnimatedBottomNav extends StatelessWidget {
             top: false,
             child: SizedBox(
               height: 64,
+              // Cada ítem en un Expanded: con 7 tabs en pantallas angostas
+              // un Row suelto se desbordaba y los últimos quedaban fuera
+              // de la pantalla (intocables). Así todos comparten el ancho
+              // disponible y siempre son alcanzables.
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   for (var i = 0; i < destinations.length; i++)
-                    _NavItem(
-                      destination: destinations[i],
-                      selected: i == selectedIndex,
-                      onTap: () => onDestinationSelected(i),
+                    Expanded(
+                      child: _NavItem(
+                        destination: destinations[i],
+                        selected: i == selectedIndex,
+                        onTap: () => onDestinationSelected(i),
+                      ),
                     ),
                 ],
               ),
@@ -77,28 +82,34 @@ class _NavItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(AppRadii.lg),
-      onTap: onTap,
-      // AnimatedSize hace que el ancho crezca/encoja con fluidez cuando
-      // el label aparece o desaparece del ítem seleccionado.
-      child: AnimatedSize(
-        duration: AppDurations.base,
-        curve: AppCurves.enter,
-        child: AnimatedContainer(
-          duration: AppDurations.base,
-          curve: AppCurves.enter,
-          padding: EdgeInsets.symmetric(
-            horizontal: selected ? 16 : 12,
-            vertical: 10,
-          ),
-          decoration: BoxDecoration(
-            gradient: selected ? AppGradients.buttonOf(context) : null,
-            borderRadius: BorderRadius.circular(AppRadii.lg),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
+    return LayoutBuilder(builder: (context, constraints) {
+      // Si el slot es angosto (7 tabs en un teléfono pequeño) la píldora
+      // con texto no cabe: se muestra solo el ícono resaltado.
+      final showLabel = selected && constraints.maxWidth >= 86;
+
+      return InkWell(
+        borderRadius: BorderRadius.circular(AppRadii.lg),
+        onTap: onTap,
+        child: Center(
+          // AnimatedSize hace que el ancho crezca/encoja con fluidez cuando
+          // el label aparece o desaparece del ítem seleccionado.
+          child: AnimatedSize(
+            duration: AppDurations.base,
+            curve: AppCurves.enter,
+            child: AnimatedContainer(
+              duration: AppDurations.base,
+              curve: AppCurves.enter,
+              padding: EdgeInsets.symmetric(
+                horizontal: showLabel ? 16 : 10,
+                vertical: 10,
+              ),
+              decoration: BoxDecoration(
+                gradient: selected ? AppGradients.buttonOf(context) : null,
+                borderRadius: BorderRadius.circular(AppRadii.lg),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
               // Pop del ícono al quedar seleccionado.
               Icon(
                 selected ? destination.selectedIcon : destination.icon,
@@ -119,23 +130,27 @@ class _NavItem extends StatelessWidget {
                     duration: 220.ms,
                     curve: Curves.elasticOut,
                   ),
-              if (selected) ...[
-                const SizedBox(width: 8),
-                Text(
-                  destination.label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
-            ],
+                  if (showLabel) ...[
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        destination.label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
           ),
         ),
-      ),
-    );
+      );
+    });
   }
 }

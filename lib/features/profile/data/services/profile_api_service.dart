@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 
 import '../../domain/entities/profile.dart';
@@ -10,6 +12,30 @@ class ProfileApiService {
   final Dio _dio;
 
   static const _base = '/api/v1/users';
+
+  /// POST /{userId}/profile-image (multipart, campo `file`).
+  /// El servicio guarda la imagen (Cloudinary), actualiza photoUrl del
+  /// usuario y devuelve la URL final — el front nunca fabrica la URL.
+  /// Solo PNG/JPEG: es lo único que acepta el use case del backend.
+  Future<String> uploadProfilePhoto(
+    String userId,
+    Uint8List bytes, {
+    required String ext,
+  }) async {
+    final normalized = ext.toLowerCase() == 'png' ? 'png' : 'jpeg';
+    final form = FormData.fromMap({
+      'file': MultipartFile.fromBytes(
+        bytes,
+        filename: 'profile.$normalized',
+        contentType: DioMediaType('image', normalized),
+      ),
+    });
+    final response = await _dio.post<Map<String, dynamic>>(
+      '$_base/$userId/profile-image',
+      data: form,
+    );
+    return response.data?['profileImageUrl'] as String? ?? '';
+  }
 
   Future<UserProfile> getUser(String userId) async {
     final response =

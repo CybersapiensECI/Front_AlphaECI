@@ -1,16 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show Uint8List;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
+import '../../../../core/storage/media_upload_service.dart';
 import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/async_value_view.dart';
+import '../../../../core/widgets/career_field.dart';
 import '../../../../core/widgets/gradient_scaffold.dart';
 import '../../../auth/presentation/widgets/auth_layout.dart' show showAppSnackBar;
 import '../../domain/entities/profile.dart';
 import '../providers/profile_provider.dart';
+import '../widgets/profile_avatar.dart';
 
 /// Edición de perfil + selector de intereses del catálogo.
 /// PATCH /api/v1/users/{userId}/student — enums verificados en el DTO:
@@ -29,8 +34,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   final _semester = TextEditingController();
   final _biography = TextEditingController();
   String? _gender;
+  String? _career;
   String? _privacy;
   bool _loading = false;
+  bool _uploadingPhoto = false;
   bool _initialized = false;
 
   static const _genders = ['MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY'];
@@ -62,7 +69,44 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     _semester.text = p.semester?.toString() ?? '';
     _biography.text = p.biography ?? '';
     _gender = _genders.contains(p.gender) ? p.gender : null;
+    _career = p.career;
     _privacy = _privacyLevels.contains(p.privacyLevel) ? p.privacyLevel : null;
+  }
+
+  /// Cambia la foto con el endpoint dedicado de profile-service
+  /// (POST /profile-image): se manda el archivo y el servicio devuelve y
+  /// persiste la URL — independiente del botón "Guardar cambios".
+  Future<void> _changePhoto() async {
+    final file = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1024,
+      imageQuality: 85,
+    );
+    if (file == null || !mounted) return;
+    final Uint8List bytes = await file.readAsBytes();
+    final dot = file.name.lastIndexOf('.');
+    final ext = dot == -1 ? 'jpg' : file.name.substring(dot + 1).toLowerCase();
+    if (!const {'jpg', 'jpeg', 'png'}.contains(ext)) {
+      if (!mounted) return;
+      showAppSnackBar(context, 'Solo se aceptan fotos JPG o PNG.');
+      return;
+    }
+    try {
+      MediaUploadService.validate(bytes, ext);
+    } on MediaValidationException catch (e) {
+      if (!mounted) return;
+      showAppSnackBar(context, e.message);
+      return;
+    }
+    setState(() => _uploadingPhoto = true);
+    final result =
+        await ref.read(profileActionsProvider).updatePhoto(bytes, ext: ext);
+    if (!mounted) return;
+    setState(() => _uploadingPhoto = false);
+    result.when(
+      success: (_) => showAppSnackBar(context, 'Foto actualizada ✨'),
+      error: (failure) => showAppSnackBar(context, failure.message),
+    );
   }
 
   Future<void> _save() async {
@@ -71,6 +115,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     final result = await ref.read(profileActionsProvider).update(
           name: _name.text.trim(),
           gender: _gender,
+          career: _career,
           semester: int.tryParse(_semester.text.trim()),
           biography: _biography.text.trim(),
           privacyLevel: _privacy,
@@ -107,9 +152,51 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     maxWidth: Breakpoints.contentMaxWidth),
                 child: Form(
                   key: _formKey,
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      // ── Foto de perfil (endpoint dedicado) ──────────
+                      Center(
+                        child: GestureDetector(
+                          onTap: _uploadingPhoto ? null : _changePhoto,
+                          child: Stack(
+                            alignment: Alignment.bottomRight,
+                            children: [
+                              ProfileAvatar(
+                                name: p.name,
+                                photoUrl: p.photoUrl,
+                                radius: 44,
+                              ),
+                              if (_uploadingPhoto)
+                                const Positioned.fill(
+                                  child: Center(
+                                      child: CircularProgressIndicator()),
+                                )
+                              else
+                                Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: theme.colorScheme.primary,
+                                    border: Border.all(
+                                        color: Colors.white, width: 2),
+                                  ),
+                                  child: const Icon(
+                                      Icons.camera_alt_outlined,
+                                      size: 16,
+                                      color: Colors.white),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Center(
+                        child: Text('Toca para cambiar tu foto',
+                            style: theme.textTheme.bodySmall),
+                      ),
+                      const SizedBox(height: 16),
                       AppTextField(
                         label: 'Nombre completo',
                         controller: _name,
@@ -127,6 +214,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                 value: g, child: Text(_genderLabels[g]!)),
                         ],
                         onChanged: (v) => setState(() => _gender = v),
+                      ),
+                      const SizedBox(height: 16),
+                      CareerField(
+                        initialCode: _career,
+                        required: false,
+                        onChanged: (code) =>
+                            setState(() => _career = code),
                       ),
                       const SizedBox(height: 16),
                       AppTextField(

@@ -6,6 +6,14 @@ abstract interface class MatchingRepository {
   /// GET /recommendations/{userId}/scores.
   Future<Result<List<ScoredCandidate>>> getRecommendations(String userId);
 
+  /// POST /recommendations/{userId}/filtered — ids que pasan los filtros
+  /// (carrera, semestre, tag, cercanía). 404 del backend = nadie pasa el
+  /// filtro = Success con lista vacía.
+  Future<Result<List<String>>> getFilteredRecommendationIds(
+    String userId,
+    DiscoveryFilters filters,
+  );
+
   /// POST / — {requesterId, targetId}.
   Future<Result<Match>> createMatch({
     required String requesterId,

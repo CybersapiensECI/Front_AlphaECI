@@ -1,4 +1,6 @@
 // TODO(demo): datos falsos para ver la app sin backends. Eliminar en prod.
+import 'dart:typed_data';
+
 import '../../../../core/errors/result.dart';
 import '../../domain/entities/profile.dart';
 import '../../domain/repositories/profile_repository.dart';
@@ -68,6 +70,14 @@ class MockProfileRepository implements ProfileRepository {
 
   @override
   Future<Result<UserProfile>> getProfile(String userId) => _ok(_me);
+
+  @override
+  Future<Result<String>> updatePhoto(
+    String userId,
+    Uint8List bytes, {
+    required String ext,
+  }) =>
+      _ok('https://picsum.photos/seed/$userId/400/400');
 
   @override
   Future<Result<UserProfile>> updateStudent(

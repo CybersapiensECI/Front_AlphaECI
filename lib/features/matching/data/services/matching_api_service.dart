@@ -21,6 +21,35 @@ class MatchingApiService {
     ];
   }
 
+  static const _semesterEnum = [
+    'FIRST', 'SECOND', 'THIRD', 'FOURTH', 'FIFTH',
+    'SIXTH', 'SEVENTH', 'EIGHTH', 'NINETH', 'TENTH',
+  ];
+
+  /// POST /recommendations/{userId}/filtered — devuelve solo los ids que
+  /// pasan los filtros. El backend responde 404 cuando nadie pasa el
+  /// filtro; el repositorio lo convierte en lista vacía.
+  Future<List<String>> getFilteredRecommendationIds(
+    String userId,
+    DiscoveryFilters filters,
+  ) async {
+    final semester = filters.semester;
+    final response = await _dio.post<Map<String, dynamic>>(
+      '$_base/recommendations/$userId/filtered',
+      data: {
+        'careers': filters.career ?? 'ALL',
+        'semesters': (semester == null || semester < 1 || semester > 10)
+            ? 'ALL'
+            : _semesterEnum[semester - 1],
+        'tag': filters.tagId,
+        'isGeolocation': filters.nearbyOnly,
+        'isActive': false,
+      },
+    );
+    final ids = response.data?['recommendedIds'] as List? ?? const [];
+    return [for (final id in ids) id as String];
+  }
+
   Future<Match> createMatch(String requesterId, String targetId) async {
     final response = await _dio.post<Map<String, dynamic>>(
       _base,

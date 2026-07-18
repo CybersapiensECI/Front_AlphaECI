@@ -64,6 +64,36 @@ class Relationship extends Equatable {
   List<Object?> get props => [status, matchId];
 }
 
+/// Filtros de descubrimiento — espejo de FilterCriteriaRequest del
+/// matching-service (POST /recommendations/{userId}/filtered). null/false
+/// significa "sin ese filtro".
+class DiscoveryFilters extends Equatable {
+  const DiscoveryFilters({
+    this.career,
+    this.semester,
+    this.tagId,
+    this.nearbyOnly = false,
+  });
+
+  /// Código CareersEnum (p. ej. 'SYSTEMS_ENGINEERING') o null = todas.
+  final String? career;
+
+  /// 1-10 o null = todos (el backend usa SemesterEnum FIRST..TENTH).
+  final int? semester;
+
+  /// Id del tag de interés (el backend compara contra ids) o null.
+  final String? tagId;
+
+  /// true = solo personas cerca (usa la geolocalización del backend).
+  final bool nearbyOnly;
+
+  bool get hasAny =>
+      career != null || semester != null || tagId != null || nearbyOnly;
+
+  @override
+  List<Object?> get props => [career, semester, tagId, nearbyOnly];
+}
+
 /// Espejo de RecommendationWithScoreResponse.
 class ScoredCandidate extends Equatable {
   const ScoredCandidate({

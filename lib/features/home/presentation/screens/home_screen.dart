@@ -10,6 +10,7 @@ import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../events/presentation/screens/events_screen.dart';
 import '../../../feed/presentation/screens/feed_screen.dart';
 import '../../../gamification/presentation/screens/monas_screen.dart';
+import '../../../geo/presentation/providers/location_provider.dart';
 import '../../../matching/presentation/screens/discovery_screen.dart';
 import '../../../matching/presentation/screens/matches_screen.dart';
 import '../../../notifications/presentation/providers/notification_provider.dart';
@@ -128,6 +129,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final unread = ref.watch(unreadCountProvider).valueOrNull ?? 0;
     final index = ref.watch(homeTabProvider);
+    // Presencia en campus (geocercas/monas) mientras el shell esté vivo,
+    // solo si el usuario dejó activada su ubicación en el perfil.
+    ref.watch(campusPresenceProvider);
 
     return AdaptiveScaffold(
       destinations: _destinations,

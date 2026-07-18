@@ -60,6 +60,7 @@ class UserProfile extends Equatable {
     this.level = 1,
     this.friendsId = const [],
     this.active = true,
+    this.geolocationEnabled = false,
   });
 
   final String id;
@@ -77,6 +78,10 @@ class UserProfile extends Equatable {
   final int level;
   final List<String> friendsId;
   final bool active;
+
+  /// El usuario aceptó compartir su ubicación (registro o edición).
+  /// Controla el envío automático de posición a GeoService.
+  final bool geolocationEnabled;
 
   /// Progreso hacia el siguiente nivel. TODO(backend): confirmar fórmula
   /// de XP por nivel; por ahora 100 XP por nivel.

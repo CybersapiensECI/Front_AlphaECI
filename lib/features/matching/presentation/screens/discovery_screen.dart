@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/constants/careers.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/router/routes.dart';
 import '../../../../core/theme/app_assets.dart';
@@ -96,9 +97,10 @@ class _DiscoveryScreenState extends ConsumerState<DiscoveryScreen> {
     }
 
     final deck = ref.watch(discoveryProvider);
+    final filters = ref.watch(discoveryFiltersProvider);
     final theme = Theme.of(context);
 
-    return AsyncValueView<List<DiscoveryCandidate>>(
+    final body = AsyncValueView<List<DiscoveryCandidate>>(
       value: deck,
       onRetry: () => ref.invalidate(discoveryProvider),
       errorBuilder: (failure) => failure is NotFoundFailure
@@ -109,17 +111,28 @@ class _DiscoveryScreenState extends ConsumerState<DiscoveryScreen> {
           return Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const EmptyState(
+              EmptyState(
                 icon: Icons.explore_outlined,
-                message:
-                    'No hay más personas por ahora.\nAgrega intereses a tu '
-                    'perfil para mejorar tus recomendaciones.',
+                message: filters.hasAny
+                    ? 'Nadie coincide con tus filtros.\nPrueba con menos '
+                        'filtros o vuelve más tarde.'
+                    : 'No hay más personas por ahora.\nAgrega intereses a tu '
+                        'perfil para mejorar tus recomendaciones.',
               ),
-              TextButton.icon(
-                onPressed: () => ref.invalidate(discoveryProvider),
-                icon: const Icon(Icons.refresh),
-                label: const Text('Buscar de nuevo'),
-              ),
+              if (filters.hasAny)
+                TextButton.icon(
+                  onPressed: () => ref
+                      .read(discoveryFiltersProvider.notifier)
+                      .state = const DiscoveryFilters(),
+                  icon: const Icon(Icons.filter_alt_off_outlined),
+                  label: const Text('Limpiar filtros'),
+                )
+              else
+                TextButton.icon(
+                  onPressed: () => ref.invalidate(discoveryProvider),
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Buscar de nuevo'),
+                ),
             ],
           );
         }
@@ -172,6 +185,190 @@ class _DiscoveryScreenState extends ConsumerState<DiscoveryScreen> {
           ),
         );
       },
+    );
+
+    // Barra de filtros arriba del mazo (basados en lo que soporta el
+    // backend: carrera, semestre, interés y cercanía).
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+          child: Row(
+            children: [
+              Expanded(
+                child: filters.hasAny
+                    ? SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            for (final label in _activeFilterLabels(filters))
+                              Padding(
+                                padding: const EdgeInsets.only(right: 6),
+                                child: Chip(
+                                  label: Text(label),
+                                  visualDensity: VisualDensity.compact,
+                                ),
+                              ),
+                          ],
+                        ),
+                      )
+                    : Text(
+                        'Personas afines a ti',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+              ),
+              Badge(
+                isLabelVisible: filters.hasAny,
+                child: IconButton(
+                  tooltip: 'Filtros',
+                  icon: const Icon(Icons.tune),
+                  onPressed: () => showModalBottomSheet<void>(
+                    context: context,
+                    isScrollControlled: true,
+                    showDragHandle: true,
+                    builder: (_) => const _FilterSheet(),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Expanded(child: body),
+      ],
+    );
+  }
+
+  List<String> _activeFilterLabels(DiscoveryFilters filters) => [
+        if (filters.career != null) careerLabel(filters.career!),
+        if (filters.semester != null) 'Semestre ${filters.semester}',
+        if (filters.tagId != null) 'Interés',
+        if (filters.nearbyOnly) 'Cerca de mí',
+      ];
+}
+
+/// Hoja de filtros de descubrimiento. Espejo de FilterCriteriaRequest.
+class _FilterSheet extends ConsumerStatefulWidget {
+  const _FilterSheet();
+
+  @override
+  ConsumerState<_FilterSheet> createState() => _FilterSheetState();
+}
+
+class _FilterSheetState extends ConsumerState<_FilterSheet> {
+  String? _career;
+  int? _semester;
+  String? _tagId;
+  bool _nearbyOnly = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final current = ref.read(discoveryFiltersProvider);
+    _career = current.career;
+    _semester = current.semester;
+    _tagId = current.tagId;
+    _nearbyOnly = current.nearbyOnly;
+  }
+
+  void _apply() {
+    ref.read(discoveryFiltersProvider.notifier).state = DiscoveryFilters(
+      career: _career,
+      semester: _semester,
+      tagId: _tagId,
+      nearbyOnly: _nearbyOnly,
+    );
+    Navigator.of(context).pop();
+  }
+
+  void _clear() {
+    ref.read(discoveryFiltersProvider.notifier).state =
+        const DiscoveryFilters();
+    Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final catalog = ref.watch(tagCatalogProvider).valueOrNull;
+    final allTags = [
+      for (final category in catalog ?? const [])
+        for (final tag in category.tags) tag,
+    ];
+
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+            24, 0, 24, 16 + MediaQuery.viewInsetsOf(context).bottom),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Filtrar personas', style: theme.textTheme.titleLarge),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String?>(
+              initialValue: _career,
+              isExpanded: true,
+              decoration: const InputDecoration(labelText: 'Carrera'),
+              items: [
+                const DropdownMenuItem(value: null, child: Text('Todas')),
+                for (final c in careers)
+                  DropdownMenuItem(value: c, child: Text(careerLabel(c))),
+              ],
+              onChanged: (v) => setState(() => _career = v),
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<int?>(
+              initialValue: _semester,
+              decoration: const InputDecoration(labelText: 'Semestre'),
+              items: [
+                const DropdownMenuItem(value: null, child: Text('Todos')),
+                for (var s = 1; s <= 10; s++)
+                  DropdownMenuItem(value: s, child: Text('Semestre $s')),
+              ],
+              onChanged: (v) => setState(() => _semester = v),
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String?>(
+              initialValue: _tagId,
+              isExpanded: true,
+              decoration: const InputDecoration(labelText: 'Interés'),
+              items: [
+                const DropdownMenuItem(value: null, child: Text('Todos')),
+                for (final tag in allTags)
+                  DropdownMenuItem(value: tag.id, child: Text(tag.name)),
+              ],
+              onChanged: (v) => setState(() => _tagId = v),
+            ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Solo personas cerca de mí'),
+              subtitle: const Text('Usa tu ubicación en el campus.'),
+              value: _nearbyOnly,
+              onChanged: (v) => setState(() => _nearbyOnly = v),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _clear,
+                    child: const Text('Limpiar'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: _apply,
+                    child: const Text('Aplicar'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

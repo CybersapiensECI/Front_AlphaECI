@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,14 +7,13 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/config/env.dart';
-import '../../../../core/constants/careers.dart';
 import '../../../../core/router/routes.dart';
 import '../../../../core/storage/media_upload_service.dart';
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
+import '../../../../core/widgets/career_field.dart';
 import '../../../../core/widgets/interest_chip.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 import '../../domain/entities/registration_data.dart';
@@ -48,7 +49,6 @@ class _CompleteProfileScreenState
   bool _geolocationEnabled = false;
   DateTime? _dateOfBirth;
   bool _loading = false;
-  bool _uploadingPhoto = false;
   Uint8List? _pickedPhotoBytes;
   String _pickedPhotoExt = 'jpg';
 
@@ -103,11 +103,14 @@ class _CompleteProfileScreenState
     final bytes = await file.readAsBytes();
     final dot = file.name.lastIndexOf('.');
     final ext = dot == -1 ? 'jpg' : file.name.substring(dot + 1).toLowerCase();
+    // profile-service solo acepta PNG/JPEG (valida el content type).
+    if (!const {'jpg', 'jpeg', 'png'}.contains(ext)) {
+      if (!mounted) return;
+      showAppSnackBar(context, 'Solo se aceptan fotos JPG o PNG.');
+      return;
+    }
     try {
-      MediaUploadService.validate(
-        bytes,
-        MediaUploadService.allowedExtensions.contains(ext) ? ext : 'jpg',
-      );
+      MediaUploadService.validate(bytes, ext);
     } on MediaValidationException catch (e) {
       if (!mounted) return;
       showAppSnackBar(context, e.message);
@@ -115,28 +118,17 @@ class _CompleteProfileScreenState
     }
     setState(() {
       _pickedPhotoBytes = bytes;
-      _pickedPhotoExt = MediaUploadService.allowedExtensions.contains(ext)
-          ? ext
-          : 'jpg';
+      _pickedPhotoExt = ext;
     });
   }
 
-  /// Foto es opcional para no bloquear el registro: si no eligen una, se
-  /// manda un avatar genérico (photoUrl es @NotBlank en el DTO, no puede
-  /// ir vacío).
-  Future<String> _resolvePhotoUrl(String userId) async {
-    if (_pickedPhotoBytes == null) {
-      return 'https://ui-avatars.com/api/?name=${Uri.encodeComponent(_name.text.trim())}&background=1A3F6D&color=fff';
-    }
-    if (Env.demoMode && !Env.firebaseTest) {
-      return 'https://picsum.photos/seed/$userId/400/400';
-    }
-    return ref.read(mediaUploadServiceProvider).uploadProfilePhoto(
-          _pickedPhotoBytes!,
-          userId: userId,
-          ext: _pickedPhotoExt,
-        );
-  }
+  /// En el payload del registro va SIEMPRE un avatar generado (photoUrl es
+  /// @NotBlank). La foto real elegida se sube después a profile-service
+  /// (POST /profile-image, que guarda la imagen y devuelve la URL): el
+  /// perfil se crea de forma asíncrona al evento user-verified, así que la
+  /// subida se hace con reintentos y sin bloquear la navegación.
+  String get _placeholderPhotoUrl =>
+      'https://ui-avatars.com/api/?name=${Uri.encodeComponent(_name.text.trim())}&background=1A3F6D&color=fff';
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
@@ -145,33 +137,8 @@ class _CompleteProfileScreenState
           context, 'Elige al menos un interés para terminar tu registro.');
       return;
     }
-    if (_dateOfBirth == null) {
-      showAppSnackBar(context, 'Ingresa tu fecha de nacimiento.');
-      return;
-    }
-    if (_career == null) {
-      showAppSnackBar(context, 'Elige tu carrera.');
-      return;
-    }
 
-    final session = ref.read(authControllerProvider).session;
     setState(() => _loading = true);
-
-    String photoUrl;
-    try {
-      setState(() => _uploadingPhoto = true);
-      photoUrl = await _resolvePhotoUrl(session?.userId ?? 'anon');
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _loading = false;
-        _uploadingPhoto = false;
-      });
-      showAppSnackBar(context, 'No se pudo subir la foto. Intenta de nuevo.');
-      return;
-    }
-    if (!mounted) return;
-    setState(() => _uploadingPhoto = false);
 
     final result =
         await ref.read(authControllerProvider.notifier).completeRegistration(
@@ -181,12 +148,11 @@ class _CompleteProfileScreenState
                 gender: _gender,
                 career: _career,
                 semester: int.tryParse(_semester.text.trim()),
-                studentCarnet:
-                    _carnet.text.trim().isEmpty ? null : _carnet.text.trim(),
+                studentCarnet: _carnet.text.trim(),
                 biography: _biography.text.trim().isEmpty
                     ? null
                     : _biography.text.trim(),
-                photoUrl: photoUrl,
+                photoUrl: _placeholderPhotoUrl,
                 privacyLevel: _privacyLevel,
                 dateOfBirth: _dateOfBirth,
                 geolocationEnabled: _geolocationEnabled,
@@ -200,6 +166,17 @@ class _CompleteProfileScreenState
         final actions = ref.read(profileActionsProvider);
         for (final tagId in _selectedTags) {
           await actions.addTag(tagId);
+        }
+        // Foto real: en segundo plano con reintentos (el perfil puede
+        // tardar unos segundos en existir). Si falla del todo, queda el
+        // avatar y se puede cambiar desde "Editar perfil".
+        final photoBytes = _pickedPhotoBytes;
+        if (photoBytes != null) {
+          unawaited(actions.updatePhoto(
+            photoBytes,
+            ext: _pickedPhotoExt,
+            retries: 3,
+          ));
         }
         if (!mounted) return;
         setState(() => _loading = false);
@@ -221,6 +198,8 @@ class _CompleteProfileScreenState
       subtitle: 'Cuéntanos quién eres para conectarte mejor.',
       child: Form(
         key: _formKey,
+        // Errores visibles apenas el campo pierde validez, no solo al enviar.
+        autovalidateMode: AutovalidateMode.onUserInteraction,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -268,7 +247,15 @@ class _CompleteProfileScreenState
             AppTextField(
               label: 'Nombre completo',
               controller: _name,
-              validator: (v) => Validators.required(v, 'El nombre'),
+              validator: (v) {
+                final required = Validators.required(v, 'El nombre');
+                if (required != null) return required;
+                final length = v!.trim().length;
+                if (length < 2 || length > 50) {
+                  return 'Entre 2 y 50 caracteres.';
+                }
+                return null;
+              },
               textInputAction: TextInputAction.next,
             ),
             const SizedBox(height: 16),
@@ -280,29 +267,37 @@ class _CompleteProfileScreenState
                   DropdownMenuItem(value: g, child: Text(_genderLabels[g]!)),
               ],
               onChanged: (v) => setState(() => _gender = v),
+              validator: (v) => v == null ? 'Elige tu género.' : null,
             ),
             const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              initialValue: _career,
-              decoration: const InputDecoration(labelText: 'Carrera'),
-              isExpanded: true,
-              items: [
-                for (final c in careers)
-                  DropdownMenuItem(value: c, child: Text(careerLabel(c))),
-              ],
-              onChanged: (v) => setState(() => _career = v),
-              validator: (v) => v == null ? 'Elige tu carrera.' : null,
+            CareerField(
+              initialCode: _career,
+              onChanged: (code) => setState(() => _career = code),
             ),
             const SizedBox(height: 16),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
                   child: AppTextField(
-                    label: 'Semestre',
+                    label: 'Semestre (1-10)',
                     controller: _semester,
                     keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(2),
+                    ],
                     textInputAction: TextInputAction.next,
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty) {
+                        return 'Escribe tu semestre.';
+                      }
+                      final n = int.tryParse(v.trim());
+                      if (n == null || n < 1 || n > 10) {
+                        return 'Entre 1 y 10.';
+                      }
+                      return null;
+                    },
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -317,7 +312,9 @@ class _CompleteProfileScreenState
                     ],
                     textInputAction: TextInputAction.next,
                     validator: (v) {
-                      if (v == null || v.trim().isEmpty) return null;
+                      if (v == null || v.trim().isEmpty) {
+                        return 'Escribe tu carnet.';
+                      }
                       return v.trim().length == 10
                           ? null
                           : 'Debe tener exactamente 10 dígitos.';
@@ -327,21 +324,31 @@ class _CompleteProfileScreenState
               ],
             ),
             const SizedBox(height: 16),
-            InkWell(
-              onTap: _pickDateOfBirth,
-              child: InputDecorator(
-                decoration: const InputDecoration(
-                  labelText: 'Fecha de nacimiento',
-                  suffixIcon: Icon(Icons.calendar_today_outlined),
-                ),
-                child: Text(
-                  _dateOfBirth == null
-                      ? 'Toca para elegir'
-                      : DateFormat('d MMM yyyy').format(_dateOfBirth!),
-                  style: _dateOfBirth == null
-                      ? theme.textTheme.bodyMedium
-                          ?.copyWith(color: theme.colorScheme.onSurfaceVariant)
-                      : theme.textTheme.bodyMedium,
+            // FormField para que el error salga inline bajo el campo, como
+            // en el resto del formulario (no solo un snackbar al enviar).
+            FormField<DateTime>(
+              validator: (_) =>
+                  _dateOfBirth == null ? 'Elige tu fecha de nacimiento.' : null,
+              builder: (field) => InkWell(
+                onTap: () async {
+                  await _pickDateOfBirth();
+                  field.didChange(_dateOfBirth);
+                },
+                child: InputDecorator(
+                  decoration: InputDecoration(
+                    labelText: 'Fecha de nacimiento',
+                    suffixIcon: const Icon(Icons.calendar_today_outlined),
+                    errorText: field.errorText,
+                  ),
+                  child: Text(
+                    _dateOfBirth == null
+                        ? 'Toca para elegir'
+                        : DateFormat('d MMM yyyy').format(_dateOfBirth!),
+                    style: _dateOfBirth == null
+                        ? theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant)
+                        : theme.textTheme.bodyMedium,
+                  ),
                 ),
               ),
             ),
@@ -368,9 +375,12 @@ class _CompleteProfileScreenState
             ),
             const SizedBox(height: 8),
             AppTextField(
-              label: 'Biografía (opcional)',
+              label: 'Biografía (opcional, máx. 200)',
               controller: _biography,
               maxLines: 3,
+              validator: (v) => (v != null && v.trim().length > 200)
+                  ? 'Máximo 200 caracteres.'
+                  : null,
             ),
             const SizedBox(height: 24),
             // ── Paso: elige tus intereses (catálogo del back) ──
@@ -437,7 +447,7 @@ class _CompleteProfileScreenState
             ),
             const SizedBox(height: 12),
             AppButton(
-              label: _uploadingPhoto ? 'Subiendo foto…' : 'Finalizar registro',
+              label: 'Finalizar registro',
               loading: _loading,
               onPressed: _submit,
             ),

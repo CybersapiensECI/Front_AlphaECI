@@ -63,14 +63,27 @@ final conversationsProvider =
   );
 });
 
+/// Identifica la sala y si es la grupal de un parche. Para parches primero
+/// se llama el ensure idempotente del backend: Parches-Service no publica
+/// parche.created, así que la sala (y la membresía de quien entra) solo
+/// existe seguro después de ese POST — sin él, el historial responde 404
+/// "Chat room not found" o 403 en producción.
+typedef ChatRoomArgs = ({String roomId, bool isParche});
+
 /// Mensajes de una sala: historial + tiempo real.
 class ChatRoomController
-    extends FamilyAsyncNotifier<List<ChatMessage>, String> {
+    extends FamilyAsyncNotifier<List<ChatMessage>, ChatRoomArgs> {
   StreamSubscription<ChatMessage>? _subscription;
 
   @override
-  Future<List<ChatMessage>> build(String chatRoomId) async {
+  Future<List<ChatMessage>> build(ChatRoomArgs args) async {
     final repo = ref.watch(chatRepositoryProvider);
+    final chatRoomId = args.roomId;
+
+    if (args.isParche) {
+      // Si falla (p. ej. sin red) getHistory reporta el error de todas formas.
+      await repo.ensureParcheRoom(chatRoomId);
+    }
 
     _subscription?.cancel();
     _subscription = repo.subscribe(chatRoomId).listen((message) {
@@ -94,12 +107,12 @@ class ChatRoomController
   }
 
   Future<Result<void>> send(String content) {
-    return ref.read(chatRepositoryProvider).sendMessage(arg, content);
+    return ref.read(chatRepositoryProvider).sendMessage(arg.roomId, content);
   }
 }
 
 final chatRoomProvider = AsyncNotifierProvider.family<ChatRoomController,
-    List<ChatMessage>, String>(ChatRoomController.new);
+    List<ChatMessage>, ChatRoomArgs>(ChatRoomController.new);
 
 /// Failure reexportado para pantallas de chat.
 typedef ChatFailure = Failure;

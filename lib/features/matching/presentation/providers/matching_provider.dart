@@ -30,30 +30,53 @@ class DiscoveryCandidate {
   final ProfileSummary profile;
 }
 
-/// Mazo de descubrimiento: recomendaciones con score + perfiles (batch).
+/// Filtros activos del descubrimiento (carrera/semestre/interés/cercanía).
+final discoveryFiltersProvider =
+    StateProvider<DiscoveryFilters>((ref) => const DiscoveryFilters());
+
+/// Mazo de descubrimiento: recomendaciones con score + perfiles (batch),
+/// siempre ordenado de mayor a menor % de afinidad. Con filtros activos se
+/// cruza con POST /filtered conservando ese orden.
 class DiscoveryController extends AsyncNotifier<List<DiscoveryCandidate>> {
   @override
   Future<List<DiscoveryCandidate>> build() async {
     final session = ref.watch(authControllerProvider).session;
     if (session == null) throw const AuthFailure();
+    final filters = ref.watch(discoveryFiltersProvider);
+    final repo = ref.read(matchingRepositoryProvider);
 
-    final recommendations = await ref
-        .read(matchingRepositoryProvider)
-        .getRecommendations(session.userId);
+    final recommendations = await repo.getRecommendations(session.userId);
 
     return recommendations.when(
       error: (failure) => throw failure,
       success: (scored) async {
-        if (scored.isEmpty) return const <DiscoveryCandidate>[];
+        // Orden garantizado en el cliente: de mayor a menor afinidad,
+        // sin depender del orden que devuelva el backend.
+        var ranked = List.of(scored)
+          ..sort((a, b) => b.totalScore.compareTo(a.totalScore));
+
+        if (filters.hasAny) {
+          final filtered = await repo.getFilteredRecommendationIds(
+            session.userId,
+            filters,
+          );
+          final allowed = (filtered.dataOrNull ?? const <String>[]).toSet();
+          ranked = [
+            for (final s in ranked)
+              if (allowed.contains(s.targetUserId)) s,
+          ];
+        }
+
+        if (ranked.isEmpty) return const <DiscoveryCandidate>[];
         final profiles = await ref
             .read(profileRepositoryProvider)
-            .getProfilesByIds([for (final s in scored) s.targetUserId]);
+            .getProfilesByIds([for (final s in ranked) s.targetUserId]);
         final byId = {
           for (final p in profiles.dataOrNull ?? const <ProfileSummary>[])
             p.id: p,
         };
         return [
-          for (final s in scored)
+          for (final s in ranked)
             DiscoveryCandidate(
               scored: s,
               profile: byId[s.targetUserId] ??
