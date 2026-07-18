@@ -16,10 +16,16 @@ abstract final class Env {
   /// Activar: flutter run --dart-define=DEMO=true
   static const demoMode = bool.fromEnvironment('DEMO') || firebaseTest;
 
+  /// Valor por defecto cuando no se pasa --dart-define=GATEWAY_URL=...
+  /// (gateway local de desarrollo). Un release compilado con este valor
+  /// "funciona" pero cada request de red falla en el teléfono — ver la
+  /// guardia en main.dart.
+  static const localhostDefault = 'http://localhost:8080';
+
   /// URL base del API Gateway (única puerta de entrada REST).
   static const gatewayUrl = String.fromEnvironment(
     'GATEWAY_URL',
-    defaultValue: 'http://localhost:8080',
+    defaultValue: localhostDefault,
   );
 
   // ── Servicios REST: por defecto, todos via gateway ──────────────

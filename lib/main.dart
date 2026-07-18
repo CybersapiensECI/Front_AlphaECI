@@ -1,4 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -9,6 +10,17 @@ import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Guardia: un release sin --dart-define=GATEWAY_URL=... compila "bien"
+  // pero cada request de red falla (apunta a localhost del propio
+  // teléfono) — el síntoma es "Sin conexión" en TODA la app, sin pista de
+  // la causa real. Preferible un crash inmediato y explícito al arrancar.
+  if (kReleaseMode && !Env.demoMode && Env.gatewayUrl == Env.localhostDefault) {
+    throw StateError(
+      'Build de release sin --dart-define=GATEWAY_URL=<url-del-gateway-prod>. '
+      'Sin esto, Env.gatewayUrl queda en ${Env.localhostDefault} y ningún '
+      'servicio funciona (todo se ve como "Sin conexión").',
+    );
+  }
   // Demo: sin backends, tampoco necesita Firebase (subida de fotos se
   // simula). Fuera de demo, si el proyecto aún no corrió
   // `flutterfire configure`, seguimos igual — solo falla al subir fotos.
