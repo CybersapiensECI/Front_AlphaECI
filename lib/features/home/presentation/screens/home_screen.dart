@@ -154,6 +154,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               )
             : Text(_destinations[index].label),
         actions: [
+          // Apartado Cafetería: parches de comida/cafeterías del campus.
+          IconButton(
+            tooltip: 'Cafetería',
+            onPressed: () => context.push(Routes.cafeteria),
+            icon: const Icon(Icons.coffee_outlined),
+          ),
           IconButton(
             tooltip: 'Chats',
             onPressed: () => context.push(Routes.chats),

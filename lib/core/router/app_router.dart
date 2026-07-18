@@ -17,6 +17,7 @@ import '../../features/geo/presentation/screens/zone_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/notifications/presentation/screens/notifications_screen.dart';
 import '../../features/parches/domain/entities/parche.dart';
+import '../../features/parches/presentation/screens/cafeteria_screen.dart';
 import '../../features/parches/presentation/screens/create_parche_screen.dart';
 import '../../features/parches/presentation/screens/parche_detail_screen.dart';
 import '../../features/profile/domain/entities/profile.dart';
@@ -146,6 +147,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.zone,
         pageBuilder: (_, state) => _page(state, const ZoneScreen()),
+      ),
+      GoRoute(
+        path: Routes.cafeteria,
+        pageBuilder: (_, state) => _page(state, const CafeteriaScreen()),
       ),
       GoRoute(
         path: Routes.publicProfile,

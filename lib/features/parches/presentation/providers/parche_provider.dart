@@ -49,6 +49,36 @@ final parcheFeedProvider = FutureProvider<List<Parche>>((ref) async {
   );
 });
 
+/// Lugares del campus estrictamente de cafetería/comida (ver
+/// core/constants/campus_places.dart: REGIO, LEYENDA y HARVIES son los
+/// tres puntos de comida). Apartado Cafetería = parches con alguno de
+/// estos lugares, o de categoría GASTRONOMY — mismo endpoint de búsqueda
+/// que el resto de la app (GET /api/parches?category=&place=), sin
+/// backend nuevo.
+const kCafeteriaPlaces = ['REGIO', 'LEYENDA', 'HARVIES'];
+
+/// Parches del apartado Cafetería: unión (sin duplicados) de los
+/// resultados por cada lugar de comida + los de categoría GASTRONOMY.
+final cafeteriaParchesProvider = FutureProvider<List<Parche>>((ref) async {
+  final repo = ref.watch(parcheRepositoryProvider);
+  final results = await Future.wait([
+    repo.search(category: 'GASTRONOMY'),
+    for (final place in kCafeteriaPlaces) repo.search(place: place),
+  ]);
+  final byId = <String, Parche>{};
+  for (final result in results) {
+    result.when(
+      success: (parches) {
+        for (final p in parches) {
+          byId[p.id] = p;
+        }
+      },
+      error: (failure) => throw failure,
+    );
+  }
+  return byId.values.toList();
+});
+
 /// Miembros de un parche.
 final parcheMembersProvider =
     FutureProvider.family<List<ParcheMember>, String>((ref, parcheId) async {

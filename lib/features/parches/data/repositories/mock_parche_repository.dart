@@ -64,6 +64,23 @@ class MockParcheRepository implements ParcheRepository {
       ],
     ),
     Parche(
+      id: 'p5',
+      name: 'Almuerzo en el Regio',
+      description: '¿Quién más almuerza solo hoy? Hay puestos libres.',
+      place: 'REGIO',
+      category: 'GASTRONOMY',
+      type: 'PUBLIC',
+      date: DateTime.now(),
+      hour: '12:30',
+      maximumQuota: 4,
+      status: 'ACTIVE',
+      creatorStudentId: 'u2',
+      members: const [
+        ParcheMember(studentId: 'u2', role: 'CREATOR'),
+        ParcheMember(studentId: 'u3', role: 'STUDENT'),
+      ],
+    ),
+    Parche(
       id: 'p3',
       name: 'Torneo de Smash Bros',
       description: 'Traigan sus controles. Hay premio 🏆',
@@ -173,10 +190,12 @@ class MockParcheRepository implements ParcheRepository {
   }) {
     final q = query?.toLowerCase() ?? '';
     final cat = category?.toUpperCase();
+    final pl = place?.toUpperCase();
     return _ok([
       for (final p in _parches)
-        // Igual que el backend real: filtra por categoría Y por texto.
+        // Igual que el backend real: filtra por categoría, lugar y texto.
         if ((cat == null || p.category?.toUpperCase() == cat) &&
+            (pl == null || p.place?.toUpperCase() == pl) &&
             (q.isEmpty ||
                 p.name.toLowerCase().contains(q) ||
                 (p.description?.toLowerCase().contains(q) ?? false)))

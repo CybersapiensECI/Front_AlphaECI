@@ -17,6 +17,7 @@ abstract final class Routes {
   static const dashboard = '/dashboard';
   static const bienestar = '/bienestar';
   static const zone = '/zona';
+  static const cafeteria = '/cafeteria';
   static const publicProfile = '/users/:id';
 
   static String parcheDetailPath(String id) => '/parches/$id';
