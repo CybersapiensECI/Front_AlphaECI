@@ -172,4 +172,15 @@ class ParcheActions {
     if (result.isSuccess) _ref.invalidate(parchePostsProvider(parcheId));
     return result;
   }
+
+  Future<Result<String>> reactToComment(String parcheId, String commentId) async {
+    final userId = _userId;
+    if (userId == null) return const Error(AuthFailure());
+    final result = await _ref.read(parcheRepositoryProvider).reactToComment(
+          commentId: commentId,
+          studentId: userId,
+        );
+    if (result.isSuccess) _ref.invalidate(parchePostsProvider(parcheId));
+    return result;
+  }
 }

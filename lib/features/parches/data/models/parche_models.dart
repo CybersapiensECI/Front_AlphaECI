@@ -13,6 +13,10 @@ PostComment postCommentFromJson(Map<String, dynamic> json) => PostComment(
       authorId: json['authorId'] as String? ?? '',
       text: json['text'] as String? ?? '',
       createdAt: _tryDate(json['createdAt']),
+      reactions: [
+        for (final r in (json['reactions'] as List? ?? const []))
+          postReactionFromJson(r as Map<String, dynamic>),
+      ],
     );
 
 PostReaction postReactionFromJson(Map<String, dynamic> json) => PostReaction(

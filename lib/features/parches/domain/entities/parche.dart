@@ -25,15 +25,20 @@ class PostComment extends Equatable {
     required this.authorId,
     required this.text,
     this.createdAt,
+    this.reactions = const [],
   });
 
   final String id;
   final String authorId;
   final String text;
   final DateTime? createdAt;
+  final List<PostReaction> reactions;
+
+  bool likedBy(String? userId) =>
+      userId != null && reactions.any((r) => r.studentId == userId);
 
   @override
-  List<Object?> get props => [id, authorId, text];
+  List<Object?> get props => [id, authorId, text, reactions];
 }
 
 /// Reacción ("me gusta") a una publicación o comentario (espejo de Reaction).

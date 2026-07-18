@@ -90,6 +90,29 @@ class MediaUploadService {
     );
     return task.ref.getDownloadURL();
   }
+
+  /// Foto de perfil. Vive bajo posts/profile/{userId}/... a propósito: las
+  /// storage.rules actuales solo permiten escribir bajo /posts/**, y pedir
+  /// que se agregue un prefijo nuevo (con su propio despliegue manual de
+  /// reglas en la consola de Firebase) es fricción evitable para algo que
+  /// ya cabe en el patrón existente.
+  Future<String> uploadProfilePhoto(
+    Uint8List bytes, {
+    required String userId,
+    String ext = 'jpg',
+  }) async {
+    final extension = ext.toLowerCase();
+    validate(bytes, extension);
+
+    final path = 'posts/profile/${_sanitize(userId)}/'
+        '${DateTime.now().microsecondsSinceEpoch}.$extension';
+    final ref = FirebaseStorage.instance.ref(path);
+    final task = await ref.putData(
+      bytes,
+      SettableMetadata(contentType: _contentTypes[extension]!),
+    );
+    return task.ref.getDownloadURL();
+  }
 }
 
 final mediaUploadServiceProvider =

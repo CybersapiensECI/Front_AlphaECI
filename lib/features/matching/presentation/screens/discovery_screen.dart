@@ -50,25 +50,13 @@ class _DiscoveryScreenState extends ConsumerState<DiscoveryScreen> {
     );
   }
 
-  /// Traduce mensajes crudos de matching-service (en inglés, ej. "You
-  /// can't match without any available schedules!") y guía al usuario a
-  /// completar el dato que falta en vez de mostrar el error tal cual.
+  /// failure.message ya viene traducido a español (ver
+  /// backend_message_translator.dart) — acá solo se decide si además hay
+  /// que guiar al usuario a completar el dato que falta.
   void _handleMatchError(Failure failure) {
-    final raw = failure.message;
-    var message = raw;
-    var guideToProfile = false;
-    if (raw.contains('without any tags')) {
-      message = 'Agrega al menos un interés a tu perfil para poder conectar.';
-      guideToProfile = true;
-    } else if (raw.contains('without any available schedules')) {
-      message =
-          'Agrega tu horario de disponibilidad en tu perfil para poder conectar.';
-      guideToProfile = true;
-    } else if (raw.contains('already your friend')) {
-      message = 'Ya estás conectado con esta persona.';
-    } else if (raw.contains('match request to yourself')) {
-      message = 'No puedes conectar contigo mismo.';
-    }
+    final message = failure.message;
+    final guideToProfile = message.contains('Agrega al menos un interés') ||
+        message.contains('Agrega tu horario');
     showAppSnackBar(
       context,
       message,

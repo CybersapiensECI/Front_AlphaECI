@@ -141,7 +141,9 @@ class _ParchesScreenState extends ConsumerState<ParchesScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          // Alcance: todos / creados por mí / a los que pertenezco.
+          // Alcance: creados por mí / a los que pertenezco. "Todos" ya
+          // está en la fila de categorías de arriba — repetirlo acá es
+          // redundante y confunde (dos chips "Todos" uno encima del otro).
           SizedBox(
             height: 40,
             child: ListView(
@@ -149,14 +151,19 @@ class _ParchesScreenState extends ConsumerState<ParchesScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               children: [
                 for (final (scope, label) in const [
-                  (_ParcheScope.todos, 'Todos'),
                   (_ParcheScope.mios, 'Creados por mí'),
                   (_ParcheScope.unidos, 'Mis parches'),
                 ]) ...[
                   InterestChip(
                     label: label,
                     selected: _scope == scope,
-                    onTap: () => setState(() => _scope = scope),
+                    // Tocar el chip ya seleccionado lo apaga (vuelve a
+                    // "todos") — sin esto, al no haber más chip "Todos" en
+                    // esta fila, no habría forma de deseleccionar.
+                    onTap: () => setState(
+                      () => _scope =
+                          _scope == scope ? _ParcheScope.todos : scope,
+                    ),
                   ),
                   const SizedBox(width: 8),
                 ],

@@ -113,6 +113,14 @@ class ParcheRepositoryImpl implements ParcheRepository {
     return _guard(() => _api.reactToPost(postId, studentId));
   }
 
+  @override
+  Future<Result<String>> reactToComment({
+    required String commentId,
+    required String studentId,
+  }) {
+    return _guard(() => _api.reactToComment(commentId, studentId));
+  }
+
   Future<Result<T>> _guard<T>(Future<T> Function() call) async {
     try {
       return Success(await call());

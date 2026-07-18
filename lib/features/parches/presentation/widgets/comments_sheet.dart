@@ -6,6 +6,7 @@ import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/widgets/app_sheet.dart';
 import '../../../../core/widgets/animations.dart';
 import '../../../../core/widgets/mascot.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/presentation/widgets/auth_layout.dart'
     show showAppSnackBar;
 import '../../../profile/domain/entities/profile.dart';
@@ -66,6 +67,15 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
     super.dispose();
   }
 
+  Future<void> _reactToComment(String commentId) async {
+    final result = await ref
+        .read(parcheActionsProvider)
+        .reactToComment(widget.parcheId, commentId);
+    if (!mounted) return;
+    final failure = result.failureOrNull;
+    if (failure != null) showAppSnackBar(context, failure.message);
+  }
+
   Future<void> _send() async {
     final text = _input.text.trim();
     if (text.isEmpty || _sending) return;
@@ -104,6 +114,7 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
     final authors =
         ref.watch(_commentAuthorsProvider(authorIdsKey)).valueOrNull ??
             const <String, ProfileSummary>{};
+    final myUserId = ref.watch(authControllerProvider).session?.userId;
 
     // Contenedor/alto/handle: los pone AppSheet (estándar de la app).
     return Column(
@@ -191,6 +202,31 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
                                           ),
                                         ],
                                       ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    // Corazón del comentario (toggle,
+                                    // POST /api/comments/{id}/reactions).
+                                    Column(
+                                      children: [
+                                        BouncyTap(
+                                          onTap: () =>
+                                              _reactToComment(comment.id),
+                                          child: Icon(
+                                            comment.likedBy(myUserId)
+                                                ? Icons.favorite
+                                                : Icons.favorite_border,
+                                            size: 16,
+                                            color: comment.likedBy(myUserId)
+                                                ? Colors.redAccent
+                                                : scheme.onSurfaceVariant,
+                                          ),
+                                        ),
+                                        if (comment.reactions.isNotEmpty)
+                                          Text(
+                                            '${comment.reactions.length}',
+                                            style: theme.textTheme.bodySmall,
+                                          ),
+                                      ],
                                     ),
                                   ],
                                 ),

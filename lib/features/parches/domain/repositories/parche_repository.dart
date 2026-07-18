@@ -63,4 +63,10 @@ abstract interface class ParcheRepository {
     required String postId,
     required String studentId,
   });
+
+  /// POST /api/comments/{commentId}/reactions — {studentId} (toggle).
+  Future<Result<String>> reactToComment({
+    required String commentId,
+    required String studentId,
+  });
 }

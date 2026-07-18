@@ -336,6 +336,53 @@ class MockParcheRepository implements ParcheRepository {
   }
 
   @override
+  Future<Result<String>> reactToComment({
+    required String commentId,
+    required String studentId,
+  }) {
+    for (final posts in _posts.values) {
+      for (var i = 0; i < posts.length; i++) {
+        final post = posts[i];
+        final commentIndex =
+            post.comments.indexWhere((c) => c.id == commentId);
+        if (commentIndex < 0) continue;
+        final comment = post.comments[commentIndex];
+        final already =
+            comment.reactions.any((r) => r.studentId == studentId);
+        final updatedComment = PostComment(
+          id: comment.id,
+          authorId: comment.authorId,
+          text: comment.text,
+          createdAt: comment.createdAt,
+          reactions: already
+              ? [...comment.reactions.where((r) => r.studentId != studentId)]
+              : [
+                  ...comment.reactions,
+                  PostReaction(
+                    id: 'r${_nextId++}',
+                    studentId: studentId,
+                    createdAt: DateTime.now(),
+                  ),
+                ],
+        );
+        posts[i] = ParchePost(
+          id: post.id,
+          authorId: post.authorId,
+          text: post.text,
+          photoUrl: post.photoUrl,
+          createdAt: post.createdAt,
+          reactions: post.reactions,
+          comments: [
+            for (final c in post.comments) c.id == commentId ? updatedComment : c,
+          ],
+        );
+        return _ok('Reacción procesada (demo).');
+      }
+    }
+    return _ok('Reacción procesada (demo).');
+  }
+
+  @override
   Future<Result<String>> createPost({
     required String parcheId,
     required String authorId,

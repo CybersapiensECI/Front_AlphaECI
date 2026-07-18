@@ -120,6 +120,14 @@ class ParcheApiService {
     return response.data?['message'] as String? ?? 'Reacción procesada.';
   }
 
+  Future<String> reactToComment(String commentId, String studentId) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/api/comments/$commentId/reactions',
+      data: {'studentId': studentId},
+    );
+    return response.data?['message'] as String? ?? 'Reacción procesada.';
+  }
+
   static String formatDate(DateTime date) =>
       DateFormat('yyyy-MM-dd').format(date);
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// Campo de texto estándar de la app (estilos vienen del InputDecorationTheme).
 class AppTextField extends StatefulWidget {
@@ -13,6 +14,7 @@ class AppTextField extends StatefulWidget {
     this.autofillHints,
     this.onSubmitted,
     this.maxLines = 1,
+    this.inputFormatters,
   });
 
   final String label;
@@ -24,6 +26,7 @@ class AppTextField extends StatefulWidget {
   final Iterable<String>? autofillHints;
   final void Function(String)? onSubmitted;
   final int maxLines;
+  final List<TextInputFormatter>? inputFormatters;
 
   @override
   State<AppTextField> createState() => _AppTextFieldState();
@@ -43,6 +46,7 @@ class _AppTextFieldState extends State<AppTextField> {
       autofillHints: widget.autofillHints,
       onFieldSubmitted: widget.onSubmitted,
       maxLines: widget.obscure ? 1 : widget.maxLines,
+      inputFormatters: widget.inputFormatters,
       decoration: InputDecoration(
         labelText: widget.label,
         suffixIcon: widget.obscure
