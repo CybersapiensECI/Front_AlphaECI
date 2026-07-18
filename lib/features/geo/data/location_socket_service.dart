@@ -27,9 +27,10 @@ class UserLocation {
       );
 }
 
-/// WebSocket STOMP contra GeoService (/ws-location -> /app/location ->
-/// /topic/locations), mismo patrón que ChatRepositoryImpl. Envía mi posición
-/// GPS y escucha la de los demás usuarios conectados en tiempo real.
+/// WebSocket STOMP nativo (sin SockJS) contra GeoService
+/// (/ws-location/websocket -> /app/location -> /topic/locations), mismo
+/// patrón que ChatRepositoryImpl (ver ese archivo para por qué no SockJS).
+/// Envía mi posición GPS y escucha la de los demás usuarios en tiempo real.
 class LocationSocketService {
   LocationSocketService({required String userId}) : _userId = userId;
 
@@ -44,8 +45,8 @@ class LocationSocketService {
   void _ensureConnected() {
     if (_stomp != null) return;
     _stomp = StompClient(
-      config: StompConfig.sockJS(
-        url: '${Env.geoUrl}/ws-location',
+      config: StompConfig(
+        url: '${Env.toWs(Env.geoUrl)}/ws-location/websocket',
         onConnect: (frame) {
           _connected = true;
           _stomp?.subscribe(

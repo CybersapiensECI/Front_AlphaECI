@@ -61,4 +61,14 @@ abstract final class Env {
   /// Override directo al servicio si hiciera falta: --dart-define=CHAT_WS_URL=...
   static const chatWsUrl =
       String.fromEnvironment('CHAT_WS_URL', defaultValue: gatewayUrl);
+
+  /// http(s):// -> ws(s)://. AlphaGateway solo puede proxiar el upgrade real
+  /// de WebSocket (probado: 101), no el handshake HTTP plano que SockJS hace
+  /// contra /info antes de abrir transporte — por eso los sockets STOMP
+  /// deben conectarse en modo WebSocket nativo (sin SockJS) usando esta URL.
+  static String toWs(String httpUrl) {
+    if (httpUrl.startsWith('https://')) return 'wss://${httpUrl.substring(8)}';
+    if (httpUrl.startsWith('http://')) return 'ws://${httpUrl.substring(7)}';
+    return httpUrl;
+  }
 }

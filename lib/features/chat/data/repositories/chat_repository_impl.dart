@@ -12,8 +12,11 @@ import '../../domain/entities/chat.dart';
 import '../../domain/repositories/chat_repository.dart';
 
 /// REST + STOMP contra chat-service.
-/// WebSocket: endpoint SockJS /ws-chat, enviar a /app/chat/{id}/send,
-/// escuchar /topic/parche/{id}/messages (verificado en ChatWebSocketHandler).
+/// WebSocket nativo (sin SockJS) en /ws-chat/websocket, enviar a
+/// /app/chat/{id}/send, escuchar /topic/parche/{id}/messages (verificado en
+/// ChatWebSocketHandler). SockJS se descartó: AlphaGateway solo proxia el
+/// upgrade real de WS, no el GET /info que SockJS necesita primero (probado
+/// contra prod: /ws-chat/info -> 400 vía gateway, /ws-chat/websocket -> 101).
 class ChatRepositoryImpl implements ChatRepository {
   ChatRepositoryImpl({required this._dio, required this._userId});
 
@@ -93,9 +96,8 @@ class ChatRepositoryImpl implements ChatRepository {
   void _ensureConnected() {
     if (_stomp != null) return;
     _stomp = StompClient(
-      config: StompConfig.sockJS(
-        // WS directo al chat-service: el gateway no rutea /ws-chat.
-        url: '${Env.chatWsUrl}/ws-chat',
+      config: StompConfig(
+        url: '${Env.toWs(Env.chatWsUrl)}/ws-chat/websocket',
         onConnect: (frame) {
           _connected = true;
           for (final roomId in _pendingSubscriptions) {
